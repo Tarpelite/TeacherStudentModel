@@ -1,0 +1,902 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="18643c83-69e0-49b4-90a4-d1b71fc8d207" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/Comparing-TF-and-PT-models-SQuAD.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/Comparing-TF-and-PT-models-SQuAD.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/Comparing-TF-and-PT-models.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/Comparing-TF-and-PT-models.ipynb" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FavoritesManager">
+    <favorites_list name="pytorch-pretrained-BERT" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/examples/run_classifier.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="748">
+              <caret line="63" selection-start-line="63" selection-end-line="63" />
+              <folding>
+                <element signature="e#6065#6981#0" />
+                <element signature="e#7071#10558#0" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/examples/run_classifier_reuters.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="10285">
+              <caret line="624" selection-start-line="624" selection-end-line="624" />
+              <folding>
+                <element signature="e#739#803#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/examples/run_classifier_reuters_mean.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="578">
+              <caret line="34" column="55" selection-start-line="34" selection-start-column="55" selection-end-line="34" selection-end-column="55" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/examples/run_classifier_oocl.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="6477">
+              <caret line="405" column="23" selection-start-line="405" selection-start-column="23" selection-end-line="405" selection-end-column="23" />
+              <folding>
+                <element signature="e#739#803#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/modeling_for_doc.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="2686">
+              <caret line="168" selection-start-line="168" selection-end-line="168" />
+              <folding>
+                <element signature="e#27#65#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/convert_tf_checkpoint_to_pytorch.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="629">
+              <caret line="48" column="34" selection-start-line="48" selection-start-column="34" selection-end-line="48" selection-end-column="34" />
+              <folding>
+                <element signature="e#636#674#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/examples/run_classifier_for_oocl.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="8194">
+              <caret line="507" column="26" selection-start-line="507" selection-start-column="26" selection-end-line="507" selection-end-column="26" />
+              <folding>
+                <element signature="e#675#713#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/modeling.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="16252">
+              <caret line="973" column="8" selection-start-line="973" selection-start-column="8" selection-end-line="973" selection-end-column="8" />
+              <folding>
+                <element signature="e#735#817#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/oocl_utils/evaluate.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="2074">
+              <caret line="127" selection-start-line="127" selection-end-line="127" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/processor_zoo/oocl_processor.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="893">
+              <caret line="284" column="23" selection-start-line="284" selection-start-column="23" selection-end-line="284" selection-end-column="23" />
+              <folding>
+                <element signature="e#0#14#0" expanded="true" />
+                <element signature="e#8947#14895#0" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>on_memory</find>
+      <find>case</find>
+      <find>train_file</find>
+      <find>all_start_positions</find>
+      <find>doc_stride</find>
+      <find>gradient_accumulation_steps</find>
+      <find>train_data</find>
+      <find>F1_</find>
+      <find>tok_ns_to_s_map</find>
+      <find>bert_config_file</find>
+      <find>printable_text</find>
+      <find>300</find>
+      <find>BertForTokenClassification</find>
+      <find>bin</find>
+      <find>do_lower_case</find>
+      <find>bertadam</find>
+      <find>data_dir</find>
+      <find>tokenization</find>
+      <find>AusProcessor</find>
+      <find>yelp</find>
+      <find>dbp</find>
+    </findStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/examples/run_lm_finetuning.py" />
+        <option value="$PROJECT_DIR$/data/oocl/aus/partial/preprocess.py" />
+        <option value="$PROJECT_DIR$/examples/run_classifier_aus.py" />
+        <option value="$PROJECT_DIR$/examples/run_classifier_aus_for_test.py" />
+        <option value="$PROJECT_DIR$/examples/run_labelling.py" />
+        <option value="$PROJECT_DIR$/pytorch_pretrained_bert/modeling_label.py" />
+        <option value="$PROJECT_DIR$/pipeline/run_classifier_aus.py" />
+        <option value="$PROJECT_DIR$/pipeline/run_classifier_aus_for_test.py" />
+        <option value="$PROJECT_DIR$/pipeline/pipeline.py" />
+        <option value="$PROJECT_DIR$/pipeline/run_pipeline.py" />
+        <option value="$PROJECT_DIR$/pipelines/run_classifier_aus_for_test.py" />
+        <option value="$PROJECT_DIR$/pipelines/run_classifier_aus.py" />
+        <option value="$PROJECT_DIR$/pipelines/run_pipeline.py" />
+        <option value="$PROJECT_DIR$/pipelines/pipeline.py" />
+        <option value="$PROJECT_DIR$/examples/run_labelling_v2.py" />
+        <option value="$PROJECT_DIR$/data/sentence_compress/preprocess.py" />
+        <option value="$PROJECT_DIR$/data/sentence_compress/bleu_eval.py" />
+        <option value="$PROJECT_DIR$/data/sentence_compress/bingnews_5678.subsequence/convert_2_label.py" />
+        <option value="$PROJECT_DIR$/examples/run_labelling_v2_for_time_test.py" />
+        <option value="$PROJECT_DIR$/data/sentence_compress/evaluate.py" />
+        <option value="$PROJECT_DIR$/processor_zoo/oocl_processor.py" />
+        <option value="$PROJECT_DIR$/examples/run_classifier_for_oocl.py" />
+        <option value="$PROJECT_DIR$/pytorch_pretrained_bert/modeling_for_doc.py" />
+        <option value="$PROJECT_DIR$/examples/run_classifier_oocl.py" />
+        <option value="$PROJECT_DIR$/examples/run_classifier_reuters.py" />
+        <option value="$PROJECT_DIR$/pytorch_pretrained_bert/modeling.py" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="65" />
+    <option name="width" value="1400" />
+    <option name="height" value="676" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="F:\shaohanh\git\pytorch-pretrained-BERT\examples" />
+      <recent name="F:\shaohanh\git\pytorch-pretrained-BERT" />
+      <recent name="F:\shaohanh\git\pytorch-pretrained-BERT\pytorch_pretrained_bert" />
+      <recent name="F:\shaohanh\git\pytorch-pretrained-BERT\pipeline" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.run_classifier_reuters">
+    <configuration name="lm_finetune" type="Multirun" factoryName="Multirun" separateTabs="true" startOneByOne="true" markFailedProcess="true" hideSuccessProcess="false" delayTime="15000">
+      <runConfiguration name="run_classifier_aus (1)" type="Python" />
+      <runConfiguration name="run_classifier_aus (2)" type="Python" />
+      <runConfiguration name="run_classifier_aus (3)" type="Python" />
+      <runConfiguration name="run_classifier_aus (4)" type="Python" />
+      <runConfiguration name="run_classifier_aus (5)" type="Python" />
+      <method v="2" />
+    </configuration>
+    <configuration name="bleu_eval" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/data/sentence_compress" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/data/sentence_compress/bleu_eval.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="convert_2_label" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/data/sentence_compress/bingnews_5678.subsequence" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/data/sentence_compress/bingnews_5678.subsequence/convert_2_label.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="convert_tf_checkpoint_to_pytorch" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/pytorch_pretrained_bert" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/pytorch_pretrained_bert/convert_tf_checkpoint_to_pytorch.py" />
+      <option name="PARAMETERS" value="--tf_checkpoint_path F:\shaohanh\bert\data\cased_L-12_H-768_A-12 --bert_config_file F:\shaohanh\bert\data\cased_L-12_H-768_A-12\bert_config.json --pytorch_dump_path F:\shaohanh\bert\data\cased_L-12_H-768_A-12\pytorch.bin" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="evaluate" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/data/sentence_compress" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/data/sentence_compress/evaluate.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_classifier_aus (5)" type="PythonConfigurationType" factoryName="Python">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/run_classifier_aus.py" />
+      <option name="PARAMETERS" value="--task_name AUS --do_train --do_eval --do_lower_case --data_dir F:\shaohanh\git\pytorch-pretrained-BERT\data\oocl\aus\partial\0.08 --bert_model F:\shaohanh\git\pytorch-pretrained-BERT\data\oocl\aus_fine_tune_model --max_seq_length 512 --train_batch_size 8 --learning_rate 2e-5 --num_train_epochs 10.0 --output_dir F:\shaohanh\git\pytorch-pretrained-BERT\data\oocl\aus\partial\0.08\lm_finetune_v1" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_classifier_for_oocl" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/run_classifier_for_oocl.py" />
+      <option name="PARAMETERS" value="--task_name AUS --do_train --do_eval --data_dir F:\shaohanh\bert\glue\glue_data\OOCL --vocab_file F:\shaohanh\bert\data\linc/vocab.txt --bert_config_file F:\shaohanh\bert\data\linc/bert_config.json --init_checkpoint F:\shaohanh\bert\data\linc/model_399999.bin --max_seq_length 512 --train_batch_size 8 --seed 42 --learning_rate 2e-5 --num_train_epochs 10.0 --output_dir F:\shaohanh\bert\glue\glue_data\OOCL\partial\linc_v1" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_classifier_oocl" type="PythonConfigurationType" factoryName="Python">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/run_classifier_oocl.py" />
+      <option name="PARAMETERS" value="--task_name AUS --do_train --do_eval --data_dir F:\shaohanh\bert\glue\glue_data\OOCL --bert_model F:\shaohanh\bert\data\cased_L-12_H-768_A-12 --max_seq_length 512 --train_batch_size 8 --learning_rate 2e-5 --num_train_epochs 10.0 --output_dir F:\shaohanh\bert\glue\glue_data\OOCL\bert_cased" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_classifier_oocl_test" type="PythonConfigurationType" factoryName="Python">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/run_classifier_oocl.py" />
+      <option name="PARAMETERS" value="--task_name AUS --do_eval --data_dir F:\shaohanh\bert\glue\glue_data\OOCL --bert_model F:\shaohanh\bert\glue\glue_data\OOCL\linc_v1 --max_seq_length 512 --train_batch_size 8 --learning_rate 2e-5 --num_train_epochs 10.0 --output_dir F:\shaohanh\bert\glue\glue_data\OOCL\linc_v1" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_classifier_reuters" type="PythonConfigurationType" factoryName="Python">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/run_classifier_reuters.py" />
+      <option name="PARAMETERS" value="--task_name dbpedia --do_train --do_lower_case --do_eval --data_dir F:\shaohanh\git\PFC\raw_data\dbpedia\few_shot --bert_model F:\shaohanh\git\PFC\raw_data\dbpedia\lm_ft\model --max_seq_length 128 --train_batch_size 16 --learning_rate 2e-5 --num_train_epochs 10.0 --output_dir F:\shaohanh\git\PFC\raw_data\dbpedia\lm_ft\cls_model" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_labelling" type="PythonConfigurationType" factoryName="Python">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/run_labelling.py" />
+      <option name="PARAMETERS" value="--task_name AUS --do_train --do_eval --do_lower_case --data_dir F:\shaohanh\git\pytorch-pretrained-BERT\data\oocl\aus\partial\0.01 --bert_model F:\shaohanh\git\pytorch-pretrained-BERT\data\oocl\aus_fine_tune_model_epoch5 --bert_model F:\shaohanh\git\pytorch-pretrained-BERT\data\oocl\aus_fine_tune_model_epoch5 --max_seq_length 512 --train_batch_size 8 --learning_rate 2e-5 --num_train_epochs 10.0 --output_dir F:\shaohanh\git\pytorch-pretrained-BERT\data\oocl\aus\partial\0.01\lm_finetune_v1_test --model_path F:\shaohanh\git\pytorch-pretrained-BERT\data\oocl\aus\partial\0.01\lm_finetune_v1\pytorch_model.bin --predict_file F:\shaohanh\git\pytorch-pretrained-BERT\data\oocl\aus\partial\0.01\train.csv" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_labelling_v2_sentence_compress" type="PythonConfigurationType" factoryName="Python" activateToolWindowBeforeRun="false">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/run_labelling_v2.py" />
+      <option name="PARAMETERS" value="--bert_model F:\shaohanh\git\pytorch-pretrained-BERT\data\bert-base-uncased --do_train --do_predict --do_lower_case --train_file F:\shaohanh\git\pytorch-pretrained-BERT\data\sentence_compress\bingnews_5678.subsequence\train.txt --predict_file F:\shaohanh\git\pytorch-pretrained-BERT\data\sentence_compress\bingnews_5678.subsequence\test.txt --learning_rate 3e-5 --num_train_epochs 2 --max_seq_length 128 --doc_stride 128 --output_dir F:\shaohanh\git\pytorch-pretrained-BERT\data\sentence_compress\bingnews_5678.subsequence\e2_v0 --train_batch_size 24 --gradient_accumulation_steps 1" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_labelling_v2_sentence_compress_test_time" type="PythonConfigurationType" factoryName="Python" activateToolWindowBeforeRun="false">
+      <module name="pytorch-pretrained-BERT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/run_labelling_v2_for_time_test.py" />
+      <option name="PARAMETERS" value="--bert_model F:\shaohanh\git\pytorch-pretrained-BERT\data\bert-base-uncased --do_predict --do_lower_case --train_file F:\shaohanh\git\pytorch-pretrained-BERT\data\sentence_compress\train.txt --predict_file F:\shaohanh\git\pytorch-pretrained-BERT\data\office\dataFromWikiLargerSentences.txt.sseg --learning_rate 3e-5 --num_train_epochs 2 --max_seq_length 128 --doc_stride 128 --output_dir F:\shaohanh\git\pytorch-pretrained-BERT\data\office\e2_bingnews --train_batch_size 4 --gradient_accumulation_steps 1" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.run_classifier_aus (5)" />
+      <item itemvalue="Python.run_classifier_reuters" />
+      <item itemvalue="Python.run_classifier_oocl" />
+      <item itemvalue="Python.run_classifier_oocl_test" />
+      <item itemvalue="Python.run_labelling" />
+      <item itemvalue="Python.run_labelling_v2_sentence_compress" />
+      <item itemvalue="Python.run_labelling_v2_sentence_compress_test_time" />
+      <item itemvalue="Python.evaluate" />
+      <item itemvalue="Python.bleu_eval" />
+      <item itemvalue="Python.convert_2_label" />
+      <item itemvalue="Python.run_classifier_for_oocl" />
+      <item itemvalue="Python.convert_tf_checkpoint_to_pytorch" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.convert_tf_checkpoint_to_pytorch" />
+        <item itemvalue="Python.run_classifier_for_oocl" />
+        <item itemvalue="Python.evaluate" />
+        <item itemvalue="Python.convert_2_label" />
+        <item itemvalue="Python.bleu_eval" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="18643c83-69e0-49b4-90a4-d1b71fc8d207" name="Default Changelist" comment="" />
+      <created>1550818238680</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1550818238680</updated>
+      <workItem from="1558582004287" duration="313000" />
+      <workItem from="1558585379227" duration="1221000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="1534000" />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-8" y="-8" width="1936" height="1176" extended-state="6" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4990138" visible="true" weight="0.104477614" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" sideWeight="0.5009862" side_tool="true" weight="0.24973601" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32880098" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.25339925" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.37330037" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="7" />
+      <window_info anchor="bottom" id="Terminal" order="8" />
+      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
+      <window_info anchor="bottom" id="Python Console" order="10" weight="0.32880098" />
+      <window_info anchor="bottom" id="Docker" order="11" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Database Changes" order="12" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Database" order="3" />
+      <window_info anchor="right" id="SciView" order="4" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/examples/run_lm_finetuning.py</url>
+          <line>523</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/examples/run_classifier_aus_for_test.py</url>
+          <line>486</line>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/examples/run_labelling_v2.py</url>
+          <line>800</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/examples/run_labelling_v2.py</url>
+          <line>683</line>
+          <option name="timeStamp" value="15" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/examples/run_labelling_v2.py</url>
+          <line>157</line>
+          <option name="timeStamp" value="24" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/data/sentence_compress/evaluate.py</url>
+          <line>17</line>
+          <option name="timeStamp" value="25" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/examples/run_classifier_oocl.py</url>
+          <line>464</line>
+          <option name="timeStamp" value="26" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="PythonConfigurationType">
+        <watch expression="logits" language="Python" />
+        <watch expression="eval_feature.label_seq" language="Python" />
+        <watch expression="np.argmax(np.array(logits), 1)" language="Python" />
+        <watch expression="f1_score(np.argmax(np.array(logits) &gt; 0.5, 1), np.array(eval_feature.label_seq))" language="Python" />
+        <watch expression="logits.view(-1,2).size()" language="Python" />
+        <watch expression="logits.size()" language="Python" />
+        <watch expression="label_seq[2]" language="Python" />
+        <watch expression="label_seq[0]" language="Python" />
+        <watch expression="label_seq[1]" language="Python" />
+        <watch expression="np.array(pre_num &gt; 0, int)" language="Python" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="debuggerHistoryManager">
+    <expressions id="watch">
+      <expression>
+        <expression-string>np.array(pre_num &gt; 0, int)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>pre_num &gt; 0</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>np.argmax(np.array(logits), 1)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>f1_score(np.argmax(np.array(logits) &gt; 0.5, 1), np.array(eval_feature.label_seq))</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>np.argmax(np.array(logits), 1).shape()</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>np.argmax(np.array(logits), 1).size()</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>np.argmax(np.array(logits), 1</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>np.array(logits)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>eval_feature.label_seq</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+    </expressions>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/torch/utils/data/dataloader.py" />
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tqdm/_tqdm.py" />
+    <entry file="file://$PROJECT_DIR$/data/oocl/aus/merge.py" />
+    <entry file="file://$PROJECT_DIR$/data/oocl/aus/partial/preprocess.py" />
+    <entry file="file://$PROJECT_DIR$/examples/run_swag.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="126">
+          <caret line="35" column="62" lean-forward="true" selection-start-line="35" selection-end-line="35" selection-end-column="62" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_lm_finetuning.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="276">
+          <caret line="625" selection-start-line="625" selection-end-line="625" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_labelling.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="149">
+          <caret line="31" column="67" selection-start-line="31" selection-end-line="31" selection-end-column="67" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/tokenization.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="73" column="28" selection-start-line="73" selection-start-column="28" selection-end-line="73" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/argparse.py" />
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/colorama/ansitowin32.py" />
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/torch/nn/functional.py" />
+    <entry file="file://$PROJECT_DIR$/pipelines/run_classifier_aus_for_test.py" />
+    <entry file="file://$PROJECT_DIR$/pipelines/pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/pipelines/run_classifier_aus.py" />
+    <entry file="file://$PROJECT_DIR$/pipelines/run_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/pipelines/batch.py" />
+    <entry file="file://$USER_HOME$/.PyCharmCE2018.2/system/python_stubs/-313451744/builtins.py" />
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/torch/serialization.py" />
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/sklearn/utils/validation.py" />
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/nltk/translate/bleu_score.py" />
+    <entry file="file://$PROJECT_DIR$/examples/run_labelling_v2_for_time_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="18300">
+          <caret line="759" column="59" selection-start-line="759" selection-start-column="59" selection-end-line="759" selection-end-column="59" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/data/sentence_compress/bleu_eval.py" />
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/sklearn/metrics/classification.py" />
+    <entry file="file://$PROJECT_DIR$/examples/run_labelling_v2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-347">
+          <caret line="139" column="4" selection-start-line="139" selection-start-column="4" selection-end-line="139" selection-end-column="4" />
+          <folding>
+            <element signature="n#!!doc" />
+            <element signature="e#734#798#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_squad.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="21775">
+          <caret line="895" column="18" selection-start-line="895" selection-start-column="18" selection-end-line="895" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/data/sentence_compress/evaluate.py" />
+    <entry file="file://$PROJECT_DIR$/data/sentence_compress/preprocess.py" />
+    <entry file="file://$PROJECT_DIR$/data/sentence_compress/bingnews_5678.subsequence/convert_2_label.py" />
+    <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/modeling_openai.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_classifier_aus.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="25">
+          <caret line="90" selection-start-line="90" selection-end-line="90" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_classifier_aus_for_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1435">
+          <caret line="407" column="4" selection-start-line="407" selection-start-column="4" selection-end-line="409" selection-end-column="38" />
+          <folding>
+            <element signature="n#!!doc" />
+            <element signature="e#739#803#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oocl_utils/__init__.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/processor_zoo/__init__.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/torch/nn/modules/module.py" />
+    <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/modeling_label.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-584">
+          <caret line="1" selection-start-line="1" selection-end-line="1" selection-end-column="90" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_classifier.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="748">
+          <caret line="63" selection-start-line="63" selection-end-line="63" />
+          <folding>
+            <element signature="e#6065#6981#0" />
+            <element signature="e#7071#10558#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_classifier_reuters.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="10285">
+          <caret line="624" selection-start-line="624" selection-end-line="624" />
+          <folding>
+            <element signature="e#739#803#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_classifier_reuters_mean.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="578">
+          <caret line="34" column="55" selection-start-line="34" selection-start-column="55" selection-end-line="34" selection-end-column="55" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_classifier_oocl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="6477">
+          <caret line="405" column="23" selection-start-line="405" selection-start-column="23" selection-end-line="405" selection-end-column="23" />
+          <folding>
+            <element signature="e#739#803#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/modeling_for_doc.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2686">
+          <caret line="168" selection-start-line="168" selection-end-line="168" />
+          <folding>
+            <element signature="e#27#65#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/convert_tf_checkpoint_to_pytorch.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="629">
+          <caret line="48" column="34" selection-start-line="48" selection-start-column="34" selection-end-line="48" selection-end-column="34" />
+          <folding>
+            <element signature="e#636#674#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_classifier_for_oocl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8194">
+          <caret line="507" column="26" selection-start-line="507" selection-start-column="26" selection-end-line="507" selection-end-column="26" />
+          <folding>
+            <element signature="e#675#713#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/modeling.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="16252">
+          <caret line="973" column="8" selection-start-line="973" selection-start-column="8" selection-end-line="973" selection-end-column="8" />
+          <folding>
+            <element signature="e#735#817#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oocl_utils/evaluate.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2074">
+          <caret line="127" selection-start-line="127" selection-end-line="127" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/processor_zoo/oocl_processor.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="893">
+          <caret line="284" column="23" selection-start-line="284" selection-start-column="23" selection-end-line="284" selection-end-column="23" />
+          <folding>
+            <element signature="e#0#14#0" expanded="true" />
+            <element signature="e#8947#14895#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>
