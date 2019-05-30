@@ -102,3 +102,14 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# model
+/uncased*
+
+# data
+
+.share*
+
+# small_data
+
+
