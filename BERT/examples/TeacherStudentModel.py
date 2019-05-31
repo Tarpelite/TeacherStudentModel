@@ -92,7 +92,7 @@ def evaluate(model, args, processor, device, global_step, task_name,label_list,t
         logits = logits.detach().cpu().numpy()
         label_ids = label_ids.to('cpu').numpy()
         #tmp_eval_accuracy = accuracy(logits, label_ids)
-        print(logits)
+        #print(logits)
 
         for logit, label_id in zip(logits, label_ids):
             output_file_writer.write(str(logit).replace('\n', ' '))
@@ -173,8 +173,8 @@ def split(input_ids_all, input_mask_all, segment_ids_all, label_ids_all, train_s
         split train and val data
     '''
     total_size = len(input_ids_all)
-    print("total_size", total_size)
-    print("train_size", train_size)
+    #print("total_size", total_size)
+    #print("train_size", train_size)
     permutation = np.random.choice(total_size, train_size, replace=False)
     input_ids_train = np.array(input_ids_all)[permutation]
     input_ids_val = np.array(input_ids_all)[permutation]
@@ -792,19 +792,18 @@ def main():
         all_label_ids = np.array([f.label_id for f in train_features])
         
 
-        initial_labeled_samples = 500
-        trainset_size = 5000
-        queried  = initial_labeled_samples
-        samplecount = [initial_labeled_samples]
-        selection_function = RandomSelection()
+        initial_labeled_samples = 5000
+        trainset_size = 10000
+
+        # step -2: randomly make the trainset
         train_data, val_data = split(all_input_ids, all_input_mask, all_segment_ids, all_label_ids, trainset_size)
         (input_ids, input_mask, segment_ids, label_ids) = train_data
 
-        # initial process by applying base learner to labeled training data set to obtain Classifier
+        # step -1: randomly setup the initial_labeld_samples
         permutation, input_ids_train, input_mask_train, segment_ids_train, label_ids_train = \
             get_k_random_samples(input_ids, input_mask, segment_ids, label_ids, initial_labeled_samples, trainset_size)
         
-        # assgin the val set the rest of the "unlabelled" traning data
+        # step 0: assgin the valset the rest of the "unlabelled" traning data
         input_ids_val = np.copy(input_ids)
         input_mask_val = np.copy(input_mask)
         segment_ids_val = np.copy(segment_ids)
@@ -842,12 +841,12 @@ def main():
 
         # Step 3: choose top-k data_val and reset train_data
         pos_list = [0 for x in range(len(probas_val))]
-        top_k = 100
+        top_k = 200
         type_len = probas_val.shape[1]
         index_list = []
         for i in range(type_len):
             pos_sort = sorted(range(len(probas_val)), key=lambda k:probas_val[k][i])
-            pos_sort = pos_sort[:type_len]
+            pos_sort = pos_sort[:top_k]
             for pos in pos_sort:
                 pos_list[pos] = 1
         for i in range(len(pos_list)):
@@ -862,20 +861,25 @@ def main():
         
         # step 4: train student model with teacher labeled data
         print("*"*10+"train student model"+"*"*10)
+        print("train set:", input_ids_stu.shape)
         train_dataloader_stu = load_train_data(args, input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu)
         model_student = train(model_teacher, args, n_gpu, optimizer, num_train_optimization_steps, num_labels, train_dataloader_stu, device)
         model_student.to(device)
 
         # step 5: train student model with true data
         print("*"*10+"refine student model"+"*"*10)
+        print("train set:", input_ids_train.shape)
         model_student = train(model_teacher, args, n_gpu, optimizer, num_train_optimization_steps, num_labels, train_dataloader, device)
         model_student.to(device)
 
-
+    # do eval
     if args.do_eval and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
+        logger.info("***** Running  teacher evaluation *****")
+        report_path = os.path.join(args.output_dir, "final_report_teacher.csv")
+        evaluate(model_student, args, processor, device, global_step, task_name, label_list, tokenizer, report_path)
        
-        logger.info("***** Running evaluation *****")
-        report_path = os.path.join(args.output_dir, "final_report.csv")
+        logger.info("***** Running  student evaluation *****")
+        report_path = os.path.join(args.output_dir, "final_report_student.csv")
         evaluate(model_student, args, processor, device, global_step, task_name, label_list, tokenizer, report_path)
 
         

@@ -127,7 +127,7 @@ def multilabel_classification_evaluate(true_labels_idx, pred_labels_idx, kind, v
     return a, p, r, f, p_micro, r_micro, f_micro
 
 
-def evaluation_report(true_file, pred_file, data_name, output_file, report_path, everbose=False):
+def evaluation_report(true_file, pred_file, data_name, output_file, report_path, verbose=False):
     print(data_name)
     assert data_name in ['AUS', 'UKD']
 

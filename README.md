@@ -1,4 +1,10 @@
-# TeacherStudentModel
+# Installation
+```
+cd TeacherStudentModel/examples/BERT
+
+sudo pip install .
+```
+# Run TeacherStudentModel
 TeacherStudentModel
 
 ```
@@ -11,3 +17,6 @@ python BERT\examples\TeacherStudentModel.py \
 --learning_rate 2e-5 --num_train_epochs 10.0 \
 --output_dir {output_dir}
 ```
+# data and pretrained_model
+
+need to add by yourself
