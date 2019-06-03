@@ -111,6 +111,7 @@ venv.bak/
 /share*
 /dbpedia*
 /trec*
+/yelp*
 
 # small_data
 

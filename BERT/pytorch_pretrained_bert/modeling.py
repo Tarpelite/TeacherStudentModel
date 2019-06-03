@@ -46,8 +46,8 @@ PRETRAINED_MODEL_ARCHIVE_MAP = {
     'bert-base-chinese': "https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-chinese.tar.gz",
 }
 CONFIG_NAME = 'bert_config.json'
-WEIGHTS_NAME = 'pytorch_model.bin'
 TF_WEIGHTS_NAME = 'model.ckpt'
+WEIGHTS_NAME = 'pytorch_model.bin'
 
 def load_tf_weights_in_bert(model, tf_checkpoint_path):
     """ Load tf checkpoints in a pytorch model

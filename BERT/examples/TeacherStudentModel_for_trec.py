@@ -52,12 +52,12 @@ tr_loss = 0
 
 def accuracy(out, labels):
     outputs = np.argmax(out, axis=1)
-    print("outputs", outputs)
+    #print("outputs", outputs)
     labels = np.argmax(labels, axis=1)
-    print("labels", labels)
+    #print("labels", labels)
     return np.sum(outputs == labels)
 
-def evaluate_for_dbpedia(model, args, processor, device, global_step, task_name,label_list,tokenizer,report_path):
+def evaluate_for_trec(model, args, processor, device, global_step, task_name,label_list,tokenizer):
     
     eval_examples = processor.get_dev_examples(args.data_dir)
 
@@ -77,7 +77,7 @@ def evaluate_for_dbpedia(model, args, processor, device, global_step, task_name,
 
     eval_loss, eval_accuracy = 0, 0
     nb_eval_steps, nb_eval_examples = 0, 0
-    total_eval_steps = len(all_input_ids)
+    total_eval_steps = len(all_input_ids) // 8
 
     for input_ids, input_mask, segment_ids, label_ids in eval_dataloader:
         input_ids = input_ids.to(device)
@@ -103,6 +103,27 @@ def evaluate_for_dbpedia(model, args, processor, device, global_step, task_name,
     eval_accuracy = eval_accuracy / nb_eval_examples
 
     print("accuracy:", eval_accuracy)
+
+def predict_for_trec(model, args, eval_dataloader, device):
+    '''
+        predict val data
+    '''
+    predict_result = []
+    model.eval()
+    for input_ids, input_mask, segment_ids, label_ids in eval_dataloader:
+        input_ids = input_ids.to(device)
+        input_mask = input_mask.to(device)
+        segment_ids = segment_ids.to(device)
+        label_ids = label_ids.to(device)
+
+        with torch.no_grad():
+            logits = model(input_ids, segment_ids, input_mask)
+        
+        logits = logits.detach().cpu().numpy()
+        outputs = np.argmax(logits, axis=1)
+        predict_result.extend(outputs)
+    return predict_result
+
 
 
 
@@ -521,6 +542,47 @@ class DbpediaProcessor(DataProcessor):
                 InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
         return examples
 
+class TrecProcessor(DataProcessor):
+    """Processor for the Trec data set"""
+
+    def get_train_examples(self, data_dir):
+        """See base class"""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "train.txt")), "train"
+        )
+    
+    def get_dev_examples(self, data_dir):
+        """See base class"""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "dev.txt")), "dev"
+        )
+    
+    def get_labels(self):
+        """ see base class"""
+        """trec"""
+        return [str(x) for x in range(0, 6)]
+    
+    def label_to_idx(self, label, label_to_ids):
+        idx = [0]*len(label_to_ids)
+        idx[label-1] = 1
+        return idx
+    
+    def _create_examples(self, lines, set_type):
+        """Create example for the training and dev sets"""
+        examples = []
+        label_to_ids = self.get_labels()
+        for(i, line) in enumerate(lines):
+            if len(line) != 2:
+                continue
+
+            guid = "%s-%s"%(set_type, i)
+            text_a = line[0].strip()
+            text_b = None
+            label = self.label_to_idx(int(line[1].strip()), label_to_ids)
+            examples.append(
+                InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
+        return examples
+
 
 
 
@@ -759,6 +821,7 @@ def main():
         "mnli": MnliProcessor,
         "mrpc": MrpcProcessor,
         "dbpedia":DbpediaProcessor,
+        "trec":TrecProcessor,
     }
 
     num_labels_task = {
@@ -766,7 +829,8 @@ def main():
         "cola": 2,
         "mnli": 3,
         "mrpc": 2,
-        "dbpedia": 14
+        "dbpedia": 14,
+        "trec":6
     }
 
     if args.local_rank == -1 or args.no_cuda:
@@ -877,6 +941,8 @@ def main():
                              t_total=num_train_optimization_steps)
 
     if args.do_train:
+
+        # step 0: load train examples
         train_features = convert_examples_to_features(
             train_examples, label_list, args.max_seq_length, tokenizer)
         logger.info("***** Running training *****")
@@ -884,33 +950,11 @@ def main():
         logger.info("  Batch size = %d", args.train_batch_size)
         logger.info("  Num steps = %d", num_train_optimization_steps) 
 
-        all_input_ids = np.array([f.input_ids for f in train_features])
-        all_input_mask = np.array([f.input_mask for f in train_features])
-        all_segment_ids = np.array([f.segment_ids for f in train_features])
-        all_label_ids = np.array([f.label_id for f in train_features])
+        input_ids_train = np.array([f.input_ids for f in train_features])
+        input_mask_train = np.array([f.input_mask for f in train_features])
+        segment_ids_train = np.array([f.segment_ids for f in train_features])
+        label_ids_train = np.array([f.label_id for f in train_features])
         
-
-        initial_labeled_samples = 100
-        trainset_size = 100
-
-        # step -2: randomly make the trainset
-        train_data, val_data = split(all_input_ids, all_input_mask, all_segment_ids, all_label_ids, trainset_size)
-        (input_ids, input_mask, segment_ids, label_ids) = train_data
-
-        # step -1: randomly setup the initial_labeld_samples
-        permutation, input_ids_train, input_mask_train, segment_ids_train, label_ids_train = \
-            get_k_random_samples(input_ids, input_mask, segment_ids, label_ids, initial_labeled_samples, trainset_size)
-        
-        # step 0: assgin the valset the rest of the "unlabelled" traning data
-        input_ids_val = np.copy(input_ids)
-        input_mask_val = np.copy(input_mask)
-        segment_ids_val = np.copy(segment_ids)
-        label_ids_val = np.copy(label_ids)
-        input_ids_val = np.delete(input_ids_val, permutation, axis=0)
-        input_mask_val = np.delete(input_mask_val, permutation, axis=0)
-        segment_ids_val = np.delete(segment_ids_val, permutation, axis=0)
-        label_ids_val = np.delete(label_ids_val, permutation, axis=0)
-        print('val set:',input_ids_val.shape, label_ids_val.shape, permutation.shape)
 
         # Step 1: train the teacher_model
         print("*"*10+"train teacher model"+"*"*10)
@@ -920,31 +964,32 @@ def main():
         model_teacher = train(model_teacher, args, n_gpu, optimizer, num_train_optimization_steps, num_labels, train_dataloader, device)
         
         model_teacher.to(device)
+        print()
+        print("teacher model accuracy:")
+        #evaluate_for_dbpedia(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer)
 
-        '''
+        
         # Step 2: predict the val_set
-        eval_dataloader = load_eval_data(args, input_ids_val, input_mask_val, segment_ids_val, label_ids_val)
-        probas_val = predict(model_teacher, args, eval_dataloader, device)
+        eval_examples = processor.get_dev_examples(args.data_dir)
+        eval_features = convert_examples_to_features(
+            eval_examples, label_list, args.max_seq_length, tokenizer)
+        input_ids_val = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
+        input_mask_val = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
+        segment_ids_val = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
+        label_ids_val = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
+        eval_data = TensorDataset(input_ids_val, input_mask_val, segment_ids_val, label_ids_val)
 
-        threshold = 0.5
-        label_ids_predict = []
-        for i in range(len(probas_val)):
-            prob_row = list(probas_val[i])
-            label_predict_row = [0 for x in range(probas_val.shape[1])]
-            if max(prob_row) > threshold:
-                for j, score in enumerate(prob_row):
-                    if score > threshold:
-                        label_predict_row[j] = 1
-            else:
-                label_predict_row[prob_row.index(max(prob_row))] = 1
-            label_ids_predict.append(label_predict_row)
+        eval_sampler = SequentialSampler(eval_data)
+        eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
+        probas_val = predict_for_trec(model_teacher, args, eval_dataloader, device)
 
-        label_ids_predict = np.array(label_ids_predict) 
+        label_ids_predict = np.array(probas_val) 
+        print(label_ids_predict.shape)
 
         # Step 3: choose top-k data_val and reset train_data
         pos_list = [0 for x in range(len(probas_val))]
         top_k = 200
-        type_len = probas_val.shape[1]
+        type_len = label_ids_predict.shape[1]
         index_list = []
         for i in range(type_len):
             pos_sort = sorted(range(len(probas_val)), key=lambda k:probas_val[k][i])
@@ -967,19 +1012,24 @@ def main():
         train_dataloader_stu = load_train_data(args, input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu)
         model_student = train(model_teacher, args, n_gpu, optimizer, num_train_optimization_steps, num_labels, train_dataloader_stu, device)
         model_student.to(device)
+        print()
+        print("student before ft:")
+        evaluate_for_trec(model_student, args, processor, device, global_step, task_name, label_list, tokenizer)
 
         # step 5: train student model with true data
         print("*"*10+"refine student model"+"*"*10)
         print("train set:", input_ids_train.shape)
         model_student = train(model_teacher, args, n_gpu, optimizer, num_train_optimization_steps, num_labels, train_dataloader, device)
         model_student.to(device)
-        '''
+        print()
+        print("student after ft:")
+        evaluate_for_trec(model_student, args, processor, device, global_step, task_name, label_list, tokenizer)
+
 
     # do eval
     if args.do_eval and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
         logger.info("***** Running  teacher evaluation *****")
-        report_path = "..."
-        evaluate_for_dbpedia(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer, report_path)
+        evaluate_for_trec(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer)
         '''
         report_path = os.path.join(args.output_dir, "final_report_teacher.csv")
         evaluate(model_student, args, processor, device, global_step, task_name, label_list, tokenizer, report_path)
@@ -992,8 +1042,9 @@ def main():
 
 
 
+
 if __name__ == "__main__":
 
-    #processor = DbpediaProcessor()
-    #processor.get_train_examples("dbpedia")
+    #processor = TrecProcessor()
+    #input_examples = processor.get_train_examples("trec")
     main()
