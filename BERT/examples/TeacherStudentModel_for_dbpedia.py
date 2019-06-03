@@ -938,11 +938,11 @@ def main():
                               bias_correction=False,
                               max_grad_norm=1.0)
         if args.loss_scale == 0:
-            optimizer_t = FP16_Optimizer(optimizer, dynamic_loss_scale=True)
-            optimizer_s = FP16_Optimizer(optimizer, dynamic_loss_scale=True)
+            optimizer_t = FP16_Optimizer(optimizer_t, dynamic_loss_scale=True)
+            optimizer_s = FP16_Optimizer(optimizer_s, dynamic_loss_scale=True)
         else:
-            optimizer_t = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
-            optimizer_s = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
+            optimizer_t = FP16_Optimizer(optimizer_t, static_loss_scale=args.loss_scale)
+            optimizer_s = FP16_Optimizer(optimizer_s, static_loss_scale=args.loss_scale)
 
     else:
         optimizer_t = BertAdam(optimizer_grouped_parameters,

@@ -8,8 +8,8 @@ sudo pip install .
 TeacherStudentModel
 
 ```
-python BERT\examples\TeacherStudentModel.py \
---task_name AUS \
+python BERT\examples\TeacherStudentModel_for_dbpedia.py \
+--task_name dbpedia \
 --do_train --do_eval --do_lower_case \
 --data_dir {data_dir} \
 --bert_model {bert_model} \
