@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="18643c83-69e0-49b4-90a4-d1b71fc8d207" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/notebooks/Comparing-TF-and-PT-models-SQuAD.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/Comparing-TF-and-PT-models-SQuAD.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/notebooks/Comparing-TF-and-PT-models.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/Comparing-TF-and-PT-models.ipynb" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -13,28 +10,45 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FUSProjectUsageTrigger">
+    <session id="2130664594">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.open.time.0" value="1" />
+          <entry key="project.opened" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.open">
+        <counts>
+          <entry key="py" value="2" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.open">
+        <counts>
+          <entry key="Python" value="2" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="py" value="252" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
+        <counts>
+          <entry key="Python" value="252" />
+        </counts>
+      </usages-collector>
+    </session>
+  </component>
   <component name="FavoritesManager">
     <favorites_list name="pytorch-pretrained-BERT" />
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/examples/run_classifier.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="748">
-              <caret line="63" selection-start-line="63" selection-end-line="63" />
-              <folding>
-                <element signature="e#6065#6981#0" />
-                <element signature="e#7071#10558#0" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/examples/run_classifier_reuters.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="10285">
+            <state relative-caret-position="3292">
               <caret line="624" selection-start-line="624" selection-end-line="624" />
               <folding>
                 <element signature="e#739#803#0" expanded="true" />
@@ -44,18 +58,9 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/examples/run_classifier_reuters_mean.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="578">
-              <caret line="34" column="55" selection-start-line="34" selection-start-column="55" selection-end-line="34" selection-end-column="55" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/examples/run_classifier_oocl.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="6477">
+            <state relative-caret-position="9525">
               <caret line="405" column="23" selection-start-line="405" selection-start-column="23" selection-end-line="405" selection-end-column="23" />
               <folding>
                 <element signature="e#739#803#0" expanded="true" />
@@ -67,7 +72,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/modeling_for_doc.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2686">
+            <state relative-caret-position="3950">
               <caret line="168" selection-start-line="168" selection-end-line="168" />
               <folding>
                 <element signature="e#27#65#0" expanded="true" />
@@ -79,7 +84,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/convert_tf_checkpoint_to_pytorch.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="629">
+            <state relative-caret-position="925">
               <caret line="48" column="34" selection-start-line="48" selection-start-column="34" selection-end-line="48" selection-end-column="34" />
               <folding>
                 <element signature="e#636#674#0" expanded="true" />
@@ -91,7 +96,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/examples/run_classifier_for_oocl.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="8194">
+            <state relative-caret-position="12050">
               <caret line="507" column="26" selection-start-line="507" selection-start-column="26" selection-end-line="507" selection-end-column="26" />
               <folding>
                 <element signature="e#675#713#0" expanded="true" />
@@ -103,7 +108,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/modeling.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="16252">
+            <state relative-caret-position="23900">
               <caret line="973" column="8" selection-start-line="973" selection-start-column="8" selection-end-line="973" selection-end-column="8" />
               <folding>
                 <element signature="e#735#817#0" expanded="true" />
@@ -115,21 +120,135 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/oocl_utils/evaluate.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2074">
+            <state relative-caret-position="3050">
               <caret line="127" selection-start-line="127" selection-end-line="127" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/processor_zoo/oocl_processor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="893">
+            <state relative-caret-position="711">
               <caret line="284" column="23" selection-start-line="284" selection-start-column="23" selection-end-line="284" selection-end-column="23" />
               <folding>
                 <element signature="e#0#14#0" expanded="true" />
                 <element signature="e#8947#14895#0" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/examples/TeacherStudentModel_for_dbpedia.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="142">
+              <caret line="876" column="4" selection-start-line="876" selection-start-column="4" selection-end-line="876" selection-end-column="4" />
+              <folding>
+                <element signature="n#!!doc" />
+                <element signature="e#739#803#0" expanded="true" />
+                <element signature="e#4231#7895#0" />
+                <element signature="e#5379#6261#0" />
+                <element signature="e#5739#5787#0" />
+                <element signature="e#5879#6091#0" />
+                <element signature="e#6101#6143#0" />
+                <element signature="e#6373#6507#0" />
+                <element signature="e#6659#6864#0" />
+                <element signature="e#6753#6864#0" />
+                <element signature="e#7953#8539#0" />
+                <element signature="e#7953#7989#1" />
+                <element signature="e#8113#8462#0" />
+                <element signature="e#8608#8644#1" />
+                <element signature="e#9241#10146#0" />
+                <element signature="e#9241#9285#1" />
+                <element signature="e#9326#9358#0" />
+                <element signature="e#10896#11384#0" />
+                <element signature="e#11504#11933#0" />
+                <element signature="e#11986#12058#0" />
+                <element signature="e#12014#12018#0" />
+                <element signature="e#12054#12058#0" />
+                <element signature="e#12111#12302#0" />
+                <element signature="e#12187#12302#0" />
+                <element signature="e#12420#12451#1" />
+                <element signature="e#14953#15758#0" />
+                <element signature="e#15098#15758#0" />
+                <element signature="e#15098#15648#1" />
+                <element signature="e#15794#16048#0" />
+                <element signature="e#15913#16048#0" />
+                <element signature="e#16084#16941#0" />
+                <element signature="e#16213#16310#0" />
+                <element signature="e#16362#16457#0" />
+                <element signature="e#16493#16577#0" />
+                <element signature="e#16656#16941#0" />
+                <element signature="e#16767#16941#0" />
+                <element signature="e#16983#18059#0" />
+                <element signature="e#17090#17304#0" />
+                <element signature="e#17356#17485#0" />
+                <element signature="e#17521#17568#0" />
+                <element signature="e#17627#18059#0" />
+                <element signature="e#17758#18035#0" />
+                <element signature="e#18102#19168#0" />
+                <element signature="e#18213#18346#0" />
+                <element signature="e#18398#18555#0" />
+                <element signature="e#18591#18670#0" />
+                <element signature="e#18729#19168#0" />
+                <element signature="e#18860#19144#0" />
+                <element signature="e#19210#20146#0" />
+                <element signature="e#19317#19450#0" />
+                <element signature="e#19502#19631#0" />
+                <element signature="e#19667#19734#0" />
+                <element signature="e#19793#20146#0" />
+                <element signature="e#19924#20122#0" />
+                <element signature="e#20191#21127#0" />
+                <element signature="e#20298#20431#0" />
+                <element signature="e#20483#20612#0" />
+                <element signature="e#20648#20715#0" />
+                <element signature="e#20774#21127#0" />
+                <element signature="e#20905#21103#0" />
+                <element signature="e#21169#22100#0" />
+                <element signature="e#21276#21409#0" />
+                <element signature="e#21461#21590#0" />
+                <element signature="e#21626#21688#0" />
+                <element signature="e#21747#22100#0" />
+                <element signature="e#21878#22076#0" />
+                <element signature="e#22143#23059#0" />
+                <element signature="e#22250#22383#0" />
+                <element signature="e#22435#22564#0" />
+                <element signature="e#22600#22647#0" />
+                <element signature="e#22706#23059#0" />
+                <element signature="e#22837#23035#0" />
+                <element signature="e#23459#23764#0" />
+                <element signature="e#23517#23580#0" />
+                <element signature="e#23791#23941#0" />
+                <element signature="e#25287#25355#0" />
+                <element signature="e#25828#26407#1" />
+                <element signature="e#26724#27345#0" />
+                <element signature="e#26793#26868#0" />
+                <element signature="e#27134#27345#0" />
+                <element signature="e#27803#28058#0" />
+                <element signature="e#28917#29150#0" />
+                <element signature="e#30492#30622#0" />
+                <element signature="e#31651#31890#0" />
+                <element signature="e#32186#32481#0" />
+                <element signature="e#32500#32732#0" />
+                <element signature="e#32756#32999#0" />
+                <element signature="e#33686#33841#0" />
+                <element signature="e#35741#35790#0" />
+                <element signature="e#35887#36206#0" />
+                <element signature="e#36235#36348#0" />
+                <element signature="e#43686#43856#0" />
+                <element signature="e#43901#43988#0" />
+                <element signature="e#43901#43932#0" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/torch/utils/data/dataset.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="246">
+              <caret line="34" column="8" selection-start-line="34" selection-start-column="8" selection-end-line="34" selection-end-column="8" />
             </state>
           </provider>
         </entry>
@@ -159,13 +278,13 @@
       <find>300</find>
       <find>BertForTokenClassification</find>
       <find>bin</find>
-      <find>do_lower_case</find>
       <find>bertadam</find>
       <find>data_dir</find>
       <find>tokenization</find>
       <find>AusProcessor</find>
       <find>yelp</find>
       <find>dbp</find>
+      <find>do_lower_case</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -200,6 +319,7 @@
         <option value="$PROJECT_DIR$/examples/run_classifier_oocl.py" />
         <option value="$PROJECT_DIR$/examples/run_classifier_reuters.py" />
         <option value="$PROJECT_DIR$/pytorch_pretrained_bert/modeling.py" />
+        <option value="$PROJECT_DIR$/examples/TeacherStudentModel_for_dbpedia.py" />
       </list>
     </option>
   </component>
@@ -215,7 +335,22 @@
     </navigator>
     <panes>
       <pane id="Scope" />
-      <pane id="ProjectPane" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="BERT" type="b2602c69:ProjectViewProjectNode" />
+              <item name="BERT" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="BERT" type="b2602c69:ProjectViewProjectNode" />
+              <item name="BERT" type="462c0819:PsiDirectoryNode" />
+              <item name="examples" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -244,7 +379,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.run_classifier_reuters">
+  <component name="RunManager" selected="Python.TeacherStudentModel_for_dbpedia">
     <configuration name="lm_finetune" type="Multirun" factoryName="Multirun" separateTabs="true" startOneByOne="true" markFailedProcess="true" hideSuccessProcess="false" delayTime="15000">
       <runConfiguration name="run_classifier_aus (1)" type="Python" />
       <runConfiguration name="run_classifier_aus (2)" type="Python" />
@@ -253,7 +388,7 @@
       <runConfiguration name="run_classifier_aus (5)" type="Python" />
       <method v="2" />
     </configuration>
-    <configuration name="bleu_eval" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="TeacherStudentModel_for_dbpedia" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="pytorch-pretrained-BERT" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -261,13 +396,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/data/sentence_compress" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/data/sentence_compress/bleu_eval.py" />
-      <option name="PARAMETERS" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/TeacherStudentModel_for_dbpedia.py" />
+      <option name="PARAMETERS" value="--task_name dbpedia --do_train --do_eval --do_lower_case --data_dir F:\shaohanh\git\PFC\raw_data\dbpedia\few_shot --bert_model F:\shaohanh\git\pytorch-pretrained-BERT\data\bert-base-uncased --max_seq_length 128 --train_batch_size 50 --eval_batch_size 128 --learning_rate 2e-5 --num_train_epochs 10.0 --output_dir F:\shaohanh\git\PFC\raw_data\dbpedia\few_shot\ts_model" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -518,6 +652,7 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Multirun.lm_finetune" />
       <item itemvalue="Python.run_classifier_aus (5)" />
       <item itemvalue="Python.run_classifier_reuters" />
       <item itemvalue="Python.run_classifier_oocl" />
@@ -526,18 +661,18 @@
       <item itemvalue="Python.run_labelling_v2_sentence_compress" />
       <item itemvalue="Python.run_labelling_v2_sentence_compress_test_time" />
       <item itemvalue="Python.evaluate" />
-      <item itemvalue="Python.bleu_eval" />
       <item itemvalue="Python.convert_2_label" />
       <item itemvalue="Python.run_classifier_for_oocl" />
       <item itemvalue="Python.convert_tf_checkpoint_to_pytorch" />
+      <item itemvalue="Python.TeacherStudentModel_for_dbpedia" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.TeacherStudentModel_for_dbpedia" />
         <item itemvalue="Python.convert_tf_checkpoint_to_pytorch" />
         <item itemvalue="Python.run_classifier_for_oocl" />
         <item itemvalue="Python.evaluate" />
         <item itemvalue="Python.convert_2_label" />
-        <item itemvalue="Python.bleu_eval" />
       </list>
     </recent_temporary>
   </component>
@@ -560,15 +695,16 @@
     <option name="totallyTimeSpent" value="1534000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1176" extended-state="6" />
+    <frame x="-8" y="-8" width="1932" height="943" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4990138" visible="true" weight="0.104477614" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.4990138" visible="true" weight="0.08553326" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" sideWeight="0.5009862" side_tool="true" weight="0.24973601" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32880098" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.25339925" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.37330037" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.33250928" />
+      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.37330037" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -587,6 +723,9 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -626,13 +765,40 @@
           <line>464</line>
           <option name="timeStamp" value="26" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/examples/TeacherStudentModel_for_dbpedia.py</url>
+          <line>1074</line>
+          <option name="timeStamp" value="28" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/examples/TeacherStudentModel_for_dbpedia.py</url>
+          <line>1017</line>
+          <option name="timeStamp" value="31" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/examples/TeacherStudentModel_for_dbpedia.py</url>
+          <line>1039</line>
+          <option name="timeStamp" value="32" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/examples/TeacherStudentModel_for_dbpedia.py</url>
+          <line>1028</line>
+          <option name="timeStamp" value="34" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="logits" language="Python" />
-        <watch expression="eval_feature.label_seq" language="Python" />
-        <watch expression="np.argmax(np.array(logits), 1)" language="Python" />
+        <watch expression="probas_val" language="Python" />
+        <watch expression="pos_list" language="Python" />
+        <watch expression="pos_sort" language="Python" />
+        <watch expression="probas_val[pos]" language="Python" />
+        <watch expression="probas_val[3]" language="Python" />
+        <watch expression="sorted(range(len(probas_val)), key=lambda k: probas_val[k][i], reverse=True)" language="Python" />
+        <watch expression="probas_val[5664]" language="Python" />
+        <watch expression="label_ids_stu" language="Python" />
+        <watch expression="dict(zip(np.unique(label_ids_stu, return_counts=True)))" language="Python" />
+        <watch expression="dict(zip(np.unique(label_ids_stu, return_counts=True)[0], np.unique(label_ids_stu, return_counts=True)[1]))" language="Python" />
         <watch expression="f1_score(np.argmax(np.array(logits) &gt; 0.5, 1), np.array(eval_feature.label_seq))" language="Python" />
         <watch expression="logits.view(-1,2).size()" language="Python" />
         <watch expression="logits.size()" language="Python" />
@@ -640,53 +806,60 @@
         <watch expression="label_seq[0]" language="Python" />
         <watch expression="label_seq[1]" language="Python" />
         <watch expression="np.array(pre_num &gt; 0, int)" language="Python" />
+        <watch expression="label_ids_predict[1]" language="Python" />
+        <watch expression="label_ids_predict[0]" language="Python" />
       </configuration>
     </watches-manager>
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="watch">
       <expression>
-        <expression-string>np.array(pre_num &gt; 0, int)</expression-string>
+        <expression-string>label_ids_predict[1]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>pre_num &gt; 0</expression-string>
+        <expression-string>label_ids_predict[0]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.argmax(np.array(logits), 1)</expression-string>
+        <expression-string>label_ids_predict</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>f1_score(np.argmax(np.array(logits) &gt; 0.5, 1), np.array(eval_feature.label_seq))</expression-string>
+        <expression-string>dict(zip(np.unique(label_ids_stu, return_counts=True)[0], np.unique(label_ids_stu, return_counts=True)[1]))</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.argmax(np.array(logits), 1).shape()</expression-string>
+        <expression-string>dict(zip(np.unique(label_ids_stu, return_counts=True)))</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.argmax(np.array(logits), 1).size()</expression-string>
+        <expression-string>np.unique(label_ids_stu, return_counts=True)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.argmax(np.array(logits), 1</expression-string>
+        <expression-string>np.unique(label_ids_stu)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.array(logits)</expression-string>
+        <expression-string>dict(zip(np.unique(a, return_counts=True)))</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>eval_feature.label_seq</expression-string>
+        <expression-string>dict(zip(numpy.unique(a, return_counts=True)))</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>label_ids_stu</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
@@ -804,7 +977,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/examples/run_classifier.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="748">
+        <state relative-caret-position="1100">
           <caret line="63" selection-start-line="63" selection-end-line="63" />
           <folding>
             <element signature="e#6065#6981#0" />
@@ -813,26 +986,16 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/examples/run_classifier_reuters.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="10285">
-          <caret line="624" selection-start-line="624" selection-end-line="624" />
-          <folding>
-            <element signature="e#739#803#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/examples/run_classifier_reuters_mean.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="578">
+        <state relative-caret-position="850">
           <caret line="34" column="55" selection-start-line="34" selection-start-column="55" selection-end-line="34" selection-end-column="55" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/examples/run_classifier_oocl.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6477">
+        <state relative-caret-position="9525">
           <caret line="405" column="23" selection-start-line="405" selection-start-column="23" selection-end-line="405" selection-end-column="23" />
           <folding>
             <element signature="e#739#803#0" expanded="true" />
@@ -842,7 +1005,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/modeling_for_doc.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2686">
+        <state relative-caret-position="3950">
           <caret line="168" selection-start-line="168" selection-end-line="168" />
           <folding>
             <element signature="e#27#65#0" expanded="true" />
@@ -852,7 +1015,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/convert_tf_checkpoint_to_pytorch.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="629">
+        <state relative-caret-position="925">
           <caret line="48" column="34" selection-start-line="48" selection-start-column="34" selection-end-line="48" selection-end-column="34" />
           <folding>
             <element signature="e#636#674#0" expanded="true" />
@@ -862,7 +1025,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/examples/run_classifier_for_oocl.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8194">
+        <state relative-caret-position="12050">
           <caret line="507" column="26" selection-start-line="507" selection-start-column="26" selection-end-line="507" selection-end-column="26" />
           <folding>
             <element signature="e#675#713#0" expanded="true" />
@@ -872,7 +1035,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pytorch_pretrained_bert/modeling.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="16252">
+        <state relative-caret-position="23900">
           <caret line="973" column="8" selection-start-line="973" selection-start-column="8" selection-end-line="973" selection-end-column="8" />
           <folding>
             <element signature="e#735#817#0" expanded="true" />
@@ -882,18 +1045,138 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/oocl_utils/evaluate.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2074">
+        <state relative-caret-position="3050">
           <caret line="127" selection-start-line="127" selection-end-line="127" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/run_classifier_reuters.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3292">
+          <caret line="624" selection-start-line="624" selection-end-line="624" />
+          <folding>
+            <element signature="e#739#803#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/processor_zoo/oocl_processor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="893">
+        <state relative-caret-position="711">
           <caret line="284" column="23" selection-start-line="284" selection-start-column="23" selection-end-line="284" selection-end-column="23" />
           <folding>
             <element signature="e#0#14#0" expanded="true" />
             <element signature="e#8947#14895#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/torch/utils/data/dataset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="246">
+          <caret line="34" column="8" selection-start-line="34" selection-start-column="8" selection-end-line="34" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/TeacherStudentModel_for_dbpedia.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="142">
+          <caret line="876" column="4" selection-start-line="876" selection-start-column="4" selection-end-line="876" selection-end-column="4" />
+          <folding>
+            <element signature="n#!!doc" />
+            <element signature="e#739#803#0" expanded="true" />
+            <element signature="e#4231#7895#0" />
+            <element signature="e#5379#6261#0" />
+            <element signature="e#5739#5787#0" />
+            <element signature="e#5879#6091#0" />
+            <element signature="e#6101#6143#0" />
+            <element signature="e#6373#6507#0" />
+            <element signature="e#6659#6864#0" />
+            <element signature="e#6753#6864#0" />
+            <element signature="e#7953#8539#0" />
+            <element signature="e#7953#7989#1" />
+            <element signature="e#8113#8462#0" />
+            <element signature="e#8608#8644#1" />
+            <element signature="e#9241#10146#0" />
+            <element signature="e#9241#9285#1" />
+            <element signature="e#9326#9358#0" />
+            <element signature="e#10896#11384#0" />
+            <element signature="e#11504#11933#0" />
+            <element signature="e#11986#12058#0" />
+            <element signature="e#12014#12018#0" />
+            <element signature="e#12054#12058#0" />
+            <element signature="e#12111#12302#0" />
+            <element signature="e#12187#12302#0" />
+            <element signature="e#12420#12451#1" />
+            <element signature="e#14953#15758#0" />
+            <element signature="e#15098#15758#0" />
+            <element signature="e#15098#15648#1" />
+            <element signature="e#15794#16048#0" />
+            <element signature="e#15913#16048#0" />
+            <element signature="e#16084#16941#0" />
+            <element signature="e#16213#16310#0" />
+            <element signature="e#16362#16457#0" />
+            <element signature="e#16493#16577#0" />
+            <element signature="e#16656#16941#0" />
+            <element signature="e#16767#16941#0" />
+            <element signature="e#16983#18059#0" />
+            <element signature="e#17090#17304#0" />
+            <element signature="e#17356#17485#0" />
+            <element signature="e#17521#17568#0" />
+            <element signature="e#17627#18059#0" />
+            <element signature="e#17758#18035#0" />
+            <element signature="e#18102#19168#0" />
+            <element signature="e#18213#18346#0" />
+            <element signature="e#18398#18555#0" />
+            <element signature="e#18591#18670#0" />
+            <element signature="e#18729#19168#0" />
+            <element signature="e#18860#19144#0" />
+            <element signature="e#19210#20146#0" />
+            <element signature="e#19317#19450#0" />
+            <element signature="e#19502#19631#0" />
+            <element signature="e#19667#19734#0" />
+            <element signature="e#19793#20146#0" />
+            <element signature="e#19924#20122#0" />
+            <element signature="e#20191#21127#0" />
+            <element signature="e#20298#20431#0" />
+            <element signature="e#20483#20612#0" />
+            <element signature="e#20648#20715#0" />
+            <element signature="e#20774#21127#0" />
+            <element signature="e#20905#21103#0" />
+            <element signature="e#21169#22100#0" />
+            <element signature="e#21276#21409#0" />
+            <element signature="e#21461#21590#0" />
+            <element signature="e#21626#21688#0" />
+            <element signature="e#21747#22100#0" />
+            <element signature="e#21878#22076#0" />
+            <element signature="e#22143#23059#0" />
+            <element signature="e#22250#22383#0" />
+            <element signature="e#22435#22564#0" />
+            <element signature="e#22600#22647#0" />
+            <element signature="e#22706#23059#0" />
+            <element signature="e#22837#23035#0" />
+            <element signature="e#23459#23764#0" />
+            <element signature="e#23517#23580#0" />
+            <element signature="e#23791#23941#0" />
+            <element signature="e#25287#25355#0" />
+            <element signature="e#25828#26407#1" />
+            <element signature="e#26724#27345#0" />
+            <element signature="e#26793#26868#0" />
+            <element signature="e#27134#27345#0" />
+            <element signature="e#27803#28058#0" />
+            <element signature="e#28917#29150#0" />
+            <element signature="e#30492#30622#0" />
+            <element signature="e#31651#31890#0" />
+            <element signature="e#32186#32481#0" />
+            <element signature="e#32500#32732#0" />
+            <element signature="e#32756#32999#0" />
+            <element signature="e#33686#33841#0" />
+            <element signature="e#35741#35790#0" />
+            <element signature="e#35887#36206#0" />
+            <element signature="e#36235#36348#0" />
+            <element signature="e#43686#43856#0" />
+            <element signature="e#43901#43988#0" />
+            <element signature="e#43901#43932#0" />
           </folding>
         </state>
       </provider>

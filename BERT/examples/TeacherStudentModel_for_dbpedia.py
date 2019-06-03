@@ -24,7 +24,7 @@ import os
 import random
 import sys
 import time
-
+import collections
 import numpy as np
 import torch
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
@@ -42,24 +42,25 @@ from processor_zoo.oocl_processor import OOCLAUSProcessor
 from oocl_utils.evaluate import evaluation_report
 from oocl_utils.score_output_2_labels import convert
 
-logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
-                    datefmt = '%m/%d/%Y %H:%M:%S',
-                    level = logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
+                    datefmt='%m/%d/%Y %H:%M:%S',
+                    level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 global_step = 0
 nb_tr_steps = 0
 tr_loss = 0
 
+
 def accuracy(out, labels):
     outputs = np.argmax(out, axis=1)
     print("outputs", outputs)
-    #labels = np.argmax(labels, axis=1)
+    # labels = np.argmax(labels, axis=1)
     print("labels", labels)
     return np.sum(outputs == labels)
 
-def evaluate_for_dbpedia(model, args, processor, device, global_step, task_name,label_list,tokenizer):
-    
+
+def evaluate_for_dbpedia(model, args, processor, device, global_step, task_name, label_list, tokenizer):
     eval_examples = processor.get_dev_examples(args.data_dir)
 
     eval_features = convert_examples_to_features(
@@ -91,28 +92,24 @@ def evaluate_for_dbpedia(model, args, processor, device, global_step, task_name,
 
         logits = logits.detach().cpu().numpy()
         label_ids = label_ids.to('cpu').numpy()
-        #print("logits", logits)
-        #print("label_ids", label_ids)
-        tmp_eval_accuracy = accuracy(logits,label_ids)
+        # print("logits", logits)
+        # print("label_ids", label_ids)
+        tmp_eval_accuracy = accuracy(logits, label_ids)
         eval_accuracy += tmp_eval_accuracy
 
         nb_eval_examples += input_ids.size(0)
         nb_eval_steps += 1
         print("eval_steps:{0}:{1}".format(str(nb_eval_steps), str(total_eval_steps)))
-    
+
     eval_loss = eval_loss / nb_eval_steps
     eval_accuracy = eval_accuracy / nb_eval_examples
 
     print("accuracy:", eval_accuracy)
 
 
-
-
-def evaluate(model, args, processor, device, global_step, task_name,label_list,tokenizer,report_path):
-
-    #global global_step
+def evaluate(model, args, processor, device, global_step, task_name, label_list, tokenizer, report_path):
+    # global global_step
     eval_examples = processor.get_dev_examples(args.data_dir)
-
 
     eval_features = convert_examples_to_features(
         eval_examples, label_list, args.max_seq_length, tokenizer)
@@ -124,8 +121,6 @@ def evaluate(model, args, processor, device, global_step, task_name,label_list,t
 
     eval_sampler = SequentialSampler(eval_data)
     eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
-    
-
 
     model.eval()
     output_file_path = os.path.join(args.output_dir, "results_epoch_{0}.txt".format(10))
@@ -143,8 +138,8 @@ def evaluate(model, args, processor, device, global_step, task_name,label_list,t
 
         logits = logits.detach().cpu().numpy()
         label_ids = label_ids.to('cpu').numpy()
-        #tmp_eval_accuracy = accuracy(logits, label_ids)
-        #print(logits)
+        # tmp_eval_accuracy = accuracy(logits, label_ids)
+        # print(logits)
 
         for logit, label_id in zip(logits, label_ids):
             output_file_writer.write(str(logit).replace('\n', ' '))
@@ -153,18 +148,18 @@ def evaluate(model, args, processor, device, global_step, task_name,label_list,t
             output_file_writer.write('\n')
 
         # eval_loss += tmp_eval_loss.mean().item()
-        #eval_accuracy += tmp_eval_accuracy
+        # eval_accuracy += tmp_eval_accuracy
 
         nb_eval_examples += input_ids.size(0)
         nb_eval_steps += 1
 
     eval_loss = eval_loss / nb_eval_steps
-    #eval_accuracy = eval_accuracy / nb_eval_examples
+    # eval_accuracy = eval_accuracy / nb_eval_examples
 
     result = {'eval_loss': eval_loss,
-                'global_step': global_step,
-                # 'loss': tr_loss / nb_tr_steps
-                }
+              'global_step': global_step,
+              # 'loss': tr_loss / nb_tr_steps
+              }
 
     output_eval_file = os.path.join(args.output_dir, "eval_results_epoch_{0}.txt".format(10))
     with open(output_eval_file, "w") as writer:
@@ -186,8 +181,9 @@ def evaluate(model, args, processor, device, global_step, task_name,label_list,t
     output_file_writer.close()
 
     convert(output_file_path, task_name)
-    evaluation_report(label_path, output_file_path + '.label', task_name.upper(), output_file_path + '.eval', report_path)
-    
+    evaluation_report(label_path, output_file_path + '.label', task_name.upper(), output_file_path + '.eval',
+                      report_path)
+
     true_file = label_path
     pred_file = output_file_path + ".label"
 
@@ -213,12 +209,13 @@ def predict(model, args, eval_dataloader, device):
 
         with torch.no_grad():
             logits = model(input_ids, segment_ids, input_mask)
-        
+
         logits = logits.detach().cpu().numpy()
         predict_result.extend(logits)
-    
+
     predict_result = np.array(predict_result)
     return predict_result
+
 
 def predict_for_dbpedia(model, args, eval_dataloader, device):
     '''
@@ -234,20 +231,19 @@ def predict_for_dbpedia(model, args, eval_dataloader, device):
 
         with torch.no_grad():
             logits = model(input_ids, segment_ids, input_mask)
-        
+
         logits = logits.detach().cpu().numpy()
         predict_result.extend(logits)
     return predict_result
 
-    
 
 def split(input_ids_all, input_mask_all, segment_ids_all, label_ids_all, train_size):
     '''
         split train and val data
     '''
     total_size = len(input_ids_all)
-    #print("total_size", total_size)
-    #print("train_size", train_size)
+    # print("total_size", total_size)
+    # print("train_size", train_size)
     permutation = np.random.choice(total_size, train_size, replace=False)
     input_ids_train = np.array(input_ids_all)[permutation]
     input_ids_val = np.array(input_ids_all)[permutation]
@@ -262,9 +258,9 @@ def split(input_ids_all, input_mask_all, segment_ids_all, label_ids_all, train_s
 
     return train_data, val_data
 
-def load_train_data(args, input_ids, input_mask, segment_ids, label_ids):
 
-    input_ids = torch.tensor(input_ids, dtype = torch.long)
+def load_train_data(args, input_ids, input_mask, segment_ids, label_ids):
+    input_ids = torch.tensor(input_ids, dtype=torch.long)
     input_mask = torch.tensor(input_mask, dtype=torch.long)
     segment_ids = torch.tensor(segment_ids, dtype=torch.long)
     label_ids = torch.tensor(label_ids, dtype=torch.long)
@@ -276,9 +272,9 @@ def load_train_data(args, input_ids, input_mask, segment_ids, label_ids):
     train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=args.train_batch_size)
     return train_dataloader
 
-def load_eval_data(args, input_ids, input_mask, segment_ids, label_ids):
 
-    input_ids = torch.tensor(input_ids, dtype = torch.long)
+def load_eval_data(args, input_ids, input_mask, segment_ids, label_ids):
+    input_ids = torch.tensor(input_ids, dtype=torch.long)
     input_mask = torch.tensor(input_mask, dtype=torch.long)
     segment_ids = torch.tensor(segment_ids, dtype=torch.long)
     label_ids = torch.tensor(label_ids, dtype=torch.long)
@@ -289,8 +285,8 @@ def load_eval_data(args, input_ids, input_mask, segment_ids, label_ids):
 
     return eval_dataloader
 
-def get_k_random_samples(input_ids, input_mask, segment_ids, label_ids, initial_labeled_samples, trainset_size):
 
+def get_k_random_samples(input_ids, input_mask, segment_ids, label_ids, initial_labeled_samples, trainset_size):
     permutation = np.random.choice(trainset_size, initial_labeled_samples, replace=False)
     print('initial random chosen samples', permutation.shape)
 
@@ -300,27 +296,27 @@ def get_k_random_samples(input_ids, input_mask, segment_ids, label_ids, initial_
     label_ids_train = label_ids[permutation]
 
     return permutation, input_ids_train, input_mask_train, segment_ids_train, label_ids_train
-    
+
 
 class BaseSelectionFunction(object):
-    
+
     def __init__(self):
         pass
-    
+
     def select(self):
         pass
+
 
 class RandomSelection(BaseSelectionFunction):
 
     @staticmethod
     def select(probas_val, initial_labeled_samples):
-
         selection = np.random.choice(probas_val.shape[0], initial_labeled_samples, replace=False)
 
         return selection
 
 
-def train(model, args, n_gpu, optimizer, num_train_optimization_steps, num_labels,  train_dataloader, device):
+def train(model, args, n_gpu, optimizer, num_train_optimization_steps, num_labels, train_dataloader, device, num_epoch):
     '''
         train model
     '''
@@ -328,19 +324,19 @@ def train(model, args, n_gpu, optimizer, num_train_optimization_steps, num_label
     global global_step
     global nb_tr_steps
     global tr_loss
-    for _ in trange(int(args.num_train_epochs), desc="Epoch"):
+    for _ in trange(int(num_epoch), desc="Epoch"):
         tr_loss = 0
         nb_tr_examples, nb_tr_steps = 0, 0
         for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
             batch = tuple(t.to(device) for t in batch)
             input_ids, input_mask, segment_ids, label_ids = batch
-            #print("input_ids_shape", input_ids.shape)
-            #print("input_mask_shape", input_mask.shape)
-            #print("segment_ids_shape", segment_ids.shape)
-            #print("label_ids_shape", label_ids.shape)
+            # print("input_ids_shape", input_ids.shape)
+            # print("input_mask_shape", input_mask.shape)
+            # print("segment_ids_shape", segment_ids.shape)
+            # print("label_ids_shape", label_ids.shape)
             loss = model(input_ids, segment_ids, input_mask, label_ids)
             if n_gpu > 1:
-                loss = loss.mean() # mean() to average on multi-gpu.
+                loss = loss.mean()  # mean() to average on multi-gpu.
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
 
@@ -356,7 +352,8 @@ def train(model, args, n_gpu, optimizer, num_train_optimization_steps, num_label
                 if args.fp16:
                     # modify learning rate with special warm up BERT uses
                     # if args.fp16 is False, BertAdam is used that handles this automatically
-                    lr_this_step = args.learning_rate * warmup_linear(global_step/num_train_optimization_steps, args.warmup_proportion)
+                    lr_this_step = args.learning_rate * warmup_linear(global_step / num_train_optimization_steps,
+                                                                      args.warmup_proportion)
                     for param_group in optimizer.param_groups:
                         param_group['lr'] = lr_this_step
                 optimizer.step()
@@ -377,8 +374,6 @@ def train(model, args, n_gpu, optimizer, num_train_optimization_steps, num_label
     model.load_state_dict(torch.load(output_model_file))
     '''
     return model
-
-
 
 
 class InputExample(object):
@@ -436,6 +431,7 @@ class DataProcessor(object):
             for line in reader:
                 lines.append(line)
             return lines
+
 
 class MrpcProcessor(DataProcessor):
     """Processor for the MRPC data set (GLUE version)."""
@@ -502,6 +498,7 @@ class MnliProcessor(DataProcessor):
                 InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
         return examples
 
+
 class TrecProcessor(DataProcessor):
     """Processor for the CoLA data set (GLUE version)."""
 
@@ -530,6 +527,7 @@ class TrecProcessor(DataProcessor):
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
 
+
 class DBpediaProcessor(DataProcessor):
     """Processor for the CoLA data set (GLUE version)."""
 
@@ -557,6 +555,7 @@ class DBpediaProcessor(DataProcessor):
             examples.append(
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
+
 
 class YelpProcessor(DataProcessor):
     """Processor for the CoLA data set (GLUE version)."""
@@ -619,7 +618,7 @@ class ColaProcessor(DataProcessor):
 def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer):
     """Loads a data file into a list of `InputBatch`s."""
 
-    label_map = {label : i for i, label in enumerate(label_list)}
+    label_map = {label: i for i, label in enumerate(label_list)}
 
     features = []
     for (ex_index, example) in enumerate(examples):
@@ -692,10 +691,10 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
             # logger.info("label: %s (id = %d)" % (example.label, label_id))
         '''
         features.append(
-                InputFeatures(input_ids=input_ids,
-                              input_mask=input_mask,
-                              segment_ids=segment_ids,
-                              label_id=label_id))
+            InputFeatures(input_ids=input_ids,
+                          input_mask=input_mask,
+                          segment_ids=segment_ids,
+                          label_id=label_id))
     return features
 
 
@@ -716,7 +715,6 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
             tokens_b.pop()
 
 
-
 def main():
     parser = argparse.ArgumentParser()
 
@@ -728,8 +726,8 @@ def main():
                         help="The input data dir. Should contain the .tsv files (or other data files) for the task.")
     parser.add_argument("--bert_model", default=None, type=str, required=True,
                         help="Bert pre-trained model selected in the list: bert-base-uncased, "
-                        "bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, "
-                        "bert-base-multilingual-cased, bert-base-chinese.")
+                             "bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, "
+                             "bert-base-multilingual-cased, bert-base-chinese.")
     parser.add_argument("--task_name",
                         default=None,
                         type=str,
@@ -817,11 +815,11 @@ def main():
         ptvsd.wait_for_attach()
 
     processors = {
-        "aus" : OOCLAUSProcessor,
+        "aus": OOCLAUSProcessor,
         "cola": ColaProcessor,
         "mnli": MnliProcessor,
         "mrpc": MrpcProcessor,
-        "dbpedia":DBpediaProcessor,
+        "dbpedia": DBpediaProcessor,
         "yelp": YelpProcessor,
         "trec": TrecProcessor,
     }
@@ -851,7 +849,7 @@ def main():
 
     if args.gradient_accumulation_steps < 1:
         raise ValueError("Invalid gradient_accumulation_steps parameter: {}, should be >= 1".format(
-                            args.gradient_accumulation_steps))
+            args.gradient_accumulation_steps))
 
     args.train_batch_size = args.train_batch_size // args.gradient_accumulation_steps
 
@@ -890,14 +888,14 @@ def main():
             num_train_optimization_steps = num_train_optimization_steps // torch.distributed.get_world_size()
 
     # Prepare model
-    cache_dir = args.cache_dir 
+    cache_dir = args.cache_dir
     model_teacher = BertForSequenceClassification.from_pretrained(args.bert_model,
-              cache_dir=cache_dir,
-              num_labels = num_labels)
-    #print(type(model_teacher))
+                                                                  cache_dir=cache_dir,
+                                                                  num_labels=num_labels)
+    # print(type(model_teacher))
     model_student = BertForSequenceClassification.from_pretrained(args.bert_model,
-              cache_dir=cache_dir,
-              num_labels = num_labels)
+                                                                  cache_dir=cache_dir,
+                                                                  num_labels=num_labels)
     if args.fp16:
         model_teacher.half()
         model_student.half()
@@ -907,7 +905,8 @@ def main():
         try:
             from apex.parallel import DistributedDataParallel as DDP
         except ImportError:
-            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
 
         model_teacher = DDP(model_teacher)
         model_student = DDP(model_student)
@@ -916,27 +915,34 @@ def main():
         model_student = torch.nn.DataParallel(model_student)
 
     # Prepare optimizer
-    param_optimizer = list(model_teacher.named_parameters())
+    param_optimizer_t = list(model_teacher.named_parameters())
     no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-    optimizer_grouped_parameters = [
-        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
-        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
-        ]
+    optimizer_grouped_parameters_t = [
+        {'params': [p for n, p in param_optimizer_t if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
+        {'params': [p for n, p in param_optimizer_t if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+    ]
+    param_optimizer_s = list(model_student.named_parameters())
+    no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+    optimizer_grouped_parameters_s = [
+        {'params': [p for n, p in param_optimizer_s if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
+        {'params': [p for n, p in param_optimizer_s if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+    ]
     if args.fp16:
         try:
             from apex.optimizers import FP16_Optimizer
             from apex.optimizers import FusedAdam
         except ImportError:
-            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
 
-        optimizer_t = FusedAdam(optimizer_grouped_parameters,
-                              lr=args.learning_rate,
-                              bias_correction=False,
-                              max_grad_norm=1.0)
-        optimizer_s = FusedAdam(optimizer_grouped_parameters,
-                              lr=args.learning_rate,
-                              bias_correction=False,
-                              max_grad_norm=1.0)
+        optimizer_t = FusedAdam(optimizer_grouped_parameters_t,
+                                lr=args.learning_rate,
+                                bias_correction=False,
+                                max_grad_norm=1.0)
+        optimizer_s = FusedAdam(optimizer_grouped_parameters_s,
+                                lr=args.learning_rate,
+                                bias_correction=False,
+                                max_grad_norm=1.0)
         if args.loss_scale == 0:
             optimizer_t = FP16_Optimizer(optimizer_t, dynamic_loss_scale=True)
             optimizer_s = FP16_Optimizer(optimizer_s, dynamic_loss_scale=True)
@@ -945,43 +951,43 @@ def main():
             optimizer_s = FP16_Optimizer(optimizer_s, static_loss_scale=args.loss_scale)
 
     else:
-        optimizer_t = BertAdam(optimizer_grouped_parameters,
-                             lr=args.learning_rate,
-                             warmup=args.warmup_proportion,
-                             t_total=num_train_optimization_steps)
-        optimizer_s = BertAdam(optimizer_grouped_parameters,
-                             lr=args.learning_rate,
-                             warmup=args.warmup_proportion,
-                             t_total=num_train_optimization_steps)
+        optimizer_t = BertAdam(optimizer_grouped_parameters_t,
+                               lr=args.learning_rate,
+                               warmup=args.warmup_proportion,
+                               t_total=num_train_optimization_steps)
+        optimizer_s = BertAdam(optimizer_grouped_parameters_s,
+                               lr=args.learning_rate,
+                               warmup=args.warmup_proportion,
+                               t_total=num_train_optimization_steps)
 
     if args.do_train:
-       # step 0: load train examples
+        # step 0: load train examples
         train_features = convert_examples_to_features(
             train_examples, label_list, args.max_seq_length, tokenizer)
         logger.info("***** Running training *****")
         logger.info("  Num examples = %d", len(train_examples))
         logger.info("  Batch size = %d", args.train_batch_size)
-        logger.info("  Num steps = %d", num_train_optimization_steps) 
-        
+        logger.info("  Num steps = %d", num_train_optimization_steps)
+
         input_ids_train = np.array([f.input_ids for f in train_features])
         input_mask_train = np.array([f.input_mask for f in train_features])
         segment_ids_train = np.array([f.segment_ids for f in train_features])
         label_ids_train = np.array([f.label_id for f in train_features])
 
-
         # Step 1: train the teacher_model
-        print("*"*10+"train teacher model"+"*"*10)
+        print("*" * 10 + "train teacher model" + "*" * 10)
         print("input ids shape", input_ids_train.shape)
         print("label ids shape", label_ids_train.shape)
         train_dataloader = load_train_data(args, input_ids_train, input_mask_train, segment_ids_train, label_ids_train)
-        model_teacher = train(model_teacher, args, n_gpu, optimizer_t, num_train_optimization_steps, num_labels, train_dataloader, device)
-        
+        num_train_epochs = 10
+        model_teacher = train(model_teacher, args, n_gpu, optimizer_t, num_train_optimization_steps, num_labels,
+                              train_dataloader, device, num_train_epochs)
+
         model_teacher.to(device)
         print()
-        #print("teacher model accuracy:")
-        #evaluate_for_dbpedia(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer)
+        print("teacher model accuracy:")
+        evaluate_for_dbpedia(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer)
 
-        
         # Step 2: predict the val_set
         eval_examples = processor.get_dev_examples(args.data_dir)
         eval_features = convert_examples_to_features(
@@ -1004,7 +1010,7 @@ def main():
         probas_val = predict_for_dbpedia(model_teacher, args, eval_dataloader, device)
         end_time = time.time()
         label_ids_predict = np.array(probas_val)
-        print("predict cost time", end_time - start_time) 
+        print("predict cost time", end_time - start_time)
         print(label_ids_predict.shape)
 
         # Step 3: choose top-k data_val and reset train_data
@@ -1013,7 +1019,7 @@ def main():
         type_len = label_ids_predict.shape[1]
         index_list = []
         for i in range(type_len):
-            pos_sort = sorted(range(len(probas_val)), key=lambda k:probas_val[k][i])
+            pos_sort = sorted(range(len(probas_val)), key=lambda k: probas_val[k][i], reverse=True)
             pos_sort = pos_sort[:top_k]
             for pos in pos_sort:
                 pos_list[pos] = 1
@@ -1022,49 +1028,47 @@ def main():
                 index_list.append(i)
         permutation = np.array(index_list)
 
-        input_ids_stu = input_ids_val_all[permutation] 
+        input_ids_stu = input_ids_val_all[permutation]
         input_mask_stu = input_mask_val_all[permutation]
         segment_ids_stu = segment_ids_val_all[permutation]
         label_ids_stu = label_ids_predict[permutation]
-        #label_ids_true = label_ids_val_all[permutation]
+        # label_ids_true = label_ids_val_all[permutation]
         label_ids_stu = np.array([np.argmax(x, axis=0) for x in label_ids_stu])
+        print("student label distribution", collections.Counter(label_ids_stu))
 
         # step 4: train student model with teacher labeled data
-        print("*"*10+"train student model"+"*"*10)
+        print("*" * 10 + "train student model" + "*" * 10)
         print("train set:", input_ids_stu.shape)
         print("input_mask_stu", input_mask_stu.shape)
         print("label_ids_stu", label_ids_stu.shape)
-        #print("predict", label_ids_stu[:-50])
-        #print("true", label_ids_true[:-50])
+        # print("predict", label_ids_stu[:-50])
+        # print("true", label_ids_true[:-50])
 
-        
         train_dataloader_stu = load_train_data(args, input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu)
-        model_student = train(model_student, args, n_gpu, optimizer_s, num_train_optimization_steps, num_labels, train_dataloader_stu, device)
+        model_student = train(model_student, args, n_gpu, optimizer_s, num_train_optimization_steps, num_labels,
+                              train_dataloader_stu, device, 2)
         model_student.to(device)
         print()
         print("student before ft:")
         evaluate_for_dbpedia(model_student, args, processor, device, global_step, task_name, label_list, tokenizer)
 
         # step 5: train student model with true data
-        print("*"*10+"refine student model"+"*"*10)
+        print("*" * 10 + "refine student model" + "*" * 10)
         print("train set:", input_ids_train.shape)
-        model_student = train(model_student, args, n_gpu, optimizer_s, num_train_optimization_steps, num_labels, train_dataloader, device)
+        model_student = train(model_student, args, n_gpu, optimizer_s, num_train_optimization_steps, num_labels,
+                              train_dataloader, device, args.num_train_epochs)
         model_student.to(device)
         print()
         print("student after ft:")
         evaluate_for_dbpedia(model_student, args, processor, device, global_step, task_name, label_list, tokenizer)
 
-
     # do eval
     if args.do_eval and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
         logger.info("***** Running  teacher evaluation *****")
         evaluate_for_dbpedia(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer)
-        
-
 
 
 if __name__ == "__main__":
-
-    #processor = DbpediaProcessor()
-    #processor.get_train_examples("dbpedia")
+    # processor = DbpediaProcessor()
+    # processor.get_train_examples("dbpedia")
     main()
