@@ -57,15 +57,37 @@ def accuracy(out, labels):
     return
 
 
+def top_k_choose(probas_val, top_k):
+    '''
+        choose the top_k data from the predict data
+        params:probas_val:logits
+               top_k: the num of top k elenments
+        return:permutation of the data
+    '''
+    label_ids_predict = np.array(probas_val)
+    bitmap = np.zeros(len(probas_val))
+    class_num = label_ids_predict.shape[1]
+    permutation = []
+    for i in range(class_num):
+        pos_sort = sorted(range(len(probas_val)), key=lambda k: probas_val[k][i], reverse=True)
+        pos_sort = pos_sort[:top_k]
+        for pos in pos_sort:
+            bitmap[pos] = 1   
+    for i in range(len(bitmap)):
+        if bitmap[i] == 1:
+            permutation.append(i)
+    permutation = np.array(permutation)
+    return permutation
+
+
 def evaluate_for_dbpedia(model, device, eval_data_loader, logger):
     model.eval()
 
     eval_loss, eval_accuracy = 0, 0
     nb_eval_steps, nb_eval_examples = 0, 0
-    # total_eval_steps = len(all_input_ids) // 8
 
     idx = 0
-    for input_ids, input_mask, segment_ids, label_ids in tqdm(eval_data_loader):
+    for input_ids, input_mask, segment_ids, label_ids in tqdm(eval_data_loader, desc="Iteration"):
         idx += 1
         input_ids = input_ids.to(device)
         input_mask = input_mask.to(device)
@@ -387,7 +409,6 @@ class TrecProcessor(DataProcessor):
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
 
-
 class DBpediaProcessor(DataProcessor):
     """Processor for the CoLA data set (GLUE version)."""
 
@@ -404,6 +425,33 @@ class DBpediaProcessor(DataProcessor):
     def get_labels(self):
         """See base class."""
         return [str(i) for i in range(1, 15)]
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        examples = []
+        for (i, line) in enumerate(lines):
+            guid = "%s-%s" % (set_type, i)
+            text_a = line[0]
+            label = line[1]
+            examples.append(
+                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+        return examples
+class YelpProcessor(DataProcessor):
+    """Processor for the CoLA data set (GLUE version)."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "train.txt")), "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "dev.txt")), "dev")
+
+    def get_labels(self):
+        """See base class."""
+        return ['1', '2', '3', '4', '5']
 
     def _create_examples(self, lines, set_type):
         """Creates examples for the training and dev sets."""
@@ -605,6 +653,10 @@ def main():
                         help="Loss scaling to improve fp16 numeric stability. Only used when fp16 set to True.\n"
                              "0 (default value): dynamic loss scaling.\n"
                              "Positive power of 2: static loss scaling value.\n")
+    parser.add_argument("--num_student_train_epochs",
+                        type=float,
+                        default=3.0,
+                        help="Total number of student model training epochs to perform.")
     parser.add_argument('--server_ip', type=str, default='', help="Can be used for distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="Can be used for distant debugging.")
     args = parser.parse_args()
@@ -620,12 +672,14 @@ def main():
         "aus": OOCLAUSProcessor,
         "dbpedia": DBpediaProcessor,
         "trec": TrecProcessor,
+        "yelp": YelpProcessor,
     }
 
     num_labels_task = {
         "aus": 33,
         "dbpedia": len(DBpediaProcessor().get_labels()),
         "trec": len(TrecProcessor().get_labels()),
+        "yelp": len(YelpProcessor().get_labels()),
     }
 
     if args.local_rank == -1 or args.no_cuda:
@@ -740,14 +794,14 @@ def main():
         # Step 2: predict the val_set
         logger.info("***** Product pseudo label from teacher model *****")
         # TODO: duplicate with  Evaluate teacher model
-        # start_time = time.time()
+
         probas_val = predict_for_dbpedia(model_teacher, args, eval_data_loader, device)
-        # end_time = time.time()
         label_ids_predict = np.array(probas_val)
-        # print("predict cost time", end_time - start_time)
+    
 
         # Step 3: choose top-k data_val and reset train_data
         # TODO: write a funtion for data choosing.
+        '''
         pos_list = [0 for x in range(len(probas_val))]
         top_k = 200
         type_len = label_ids_predict.shape[1]
@@ -761,6 +815,8 @@ def main():
             if pos_list[i] == 1:
                 index_list.append(i)
         permutation = np.array(index_list)
+        '''
+        permutation = top_k_choose(probas_val, 200)
 
         input_ids_stu = np.array(all_input_ids[permutation])
         input_mask_stu = np.array(all_input_mask[permutation])
@@ -774,9 +830,8 @@ def main():
         # step 4: train student model with teacher labeled data
         logger.info("***** Running train student model with pseudo data *****")
         train_data_loader_stu = load_train_data(args, input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu)
-        num_train_epochs = 3
-        # TODO: change num_train_epochs of student model into args
-        model_student = train(model_student, args, n_gpu, train_data_loader_stu, device, num_train_epochs, logger)
+    
+        model_student = train(model_student, args, n_gpu, train_data_loader_stu, device, args.num_student_train_epochs, logger)
         model_student.to(device)
 
         logger.info("***** Evaluate student model 1 *****")
@@ -784,7 +839,7 @@ def main():
 
         # step 5: train student model with true data
         logger.info("***** Running train student model with training data *****")
-        model_student = train(model_student, args, n_gpu, train_data_loader, device, num_train_epochs, logger)
+        model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
         model_student.to(device)
         logger.info("***** Evaluate student model 2 *****")
         evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)

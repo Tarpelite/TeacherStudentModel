@@ -81,6 +81,8 @@ def evaluate_for_dbpedia(model, args, processor, device, global_step, task_name,
     nb_eval_steps, nb_eval_examples = 0, 0
     total_eval_steps = len(all_input_ids) // 8
 
+    predict_result = []
+
     for input_ids, input_mask, segment_ids, label_ids in eval_dataloader:
         input_ids = input_ids.to(device)
         input_mask = input_mask.to(device)
@@ -91,6 +93,7 @@ def evaluate_for_dbpedia(model, args, processor, device, global_step, task_name,
             logits = model(input_ids, segment_ids, input_mask)
 
         logits = logits.detach().cpu().numpy()
+        predict_result.extend(logits)
         label_ids = label_ids.to('cpu').numpy()
         # print("logits", logits)
         # print("label_ids", label_ids)
@@ -105,6 +108,7 @@ def evaluate_for_dbpedia(model, args, processor, device, global_step, task_name,
     eval_accuracy = eval_accuracy / nb_eval_examples
 
     print("accuracy:", eval_accuracy)
+    return predict_result
 
 
 def evaluate(model, args, processor, device, global_step, task_name, label_list, tokenizer, report_path):
@@ -894,17 +898,17 @@ def main():
                                                                   cache_dir=cache_dir,
                                                                   num_labels=num_labels)
     # print(type(model_teacher))
-    
+    '''
     model_student = BertForSequenceClassification.from_pretrained(args.bert_model,
                                                                   cache_dir=cache_dir,
                                                                   num_labels=num_labels)
-    
+    '''
 
     if args.fp16:
         model_teacher.half()
-        model_student.half()
+        #model_student.half()
     model_teacher.to(device)
-    model_student.to(device)
+    #model_student.to(device)
     if args.local_rank != -1:
         try:
             from apex.parallel import DistributedDataParallel as DDP
@@ -913,10 +917,10 @@ def main():
                 "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
 
         model_teacher = DDP(model_teacher)
-        model_student = DDP(model_student)
+        #model_student = DDP(model_student)
     elif n_gpu > 1:
         model_teacher = torch.nn.DataParallel(model_teacher)
-        model_student = torch.nn.DataParallel(model_student)
+        #model_student = torch.nn.DataParallel(model_student)
     
 
     # Prepare optimizer
@@ -925,12 +929,6 @@ def main():
     optimizer_grouped_parameters_t = [
         {'params': [p for n, p in param_optimizer_t if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
         {'params': [p for n, p in param_optimizer_t if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
-    ]
-    param_optimizer_s = list(model_student.named_parameters())
-    no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-    optimizer_grouped_parameters_s = [
-        {'params': [p for n, p in param_optimizer_s if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
-        {'params': [p for n, p in param_optimizer_s if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
     ]
     if args.fp16:
         try:
@@ -944,29 +942,18 @@ def main():
                                 lr=args.learning_rate,
                                 bias_correction=False,
                                 max_grad_norm=1.0)
-        optimizer_s = FusedAdam(optimizer_grouped_parameters_s,
-                                lr=args.learning_rate,
-                                bias_correction=False,
-                                max_grad_norm=1.0)
         if args.loss_scale == 0:
             optimizer_t = FP16_Optimizer(optimizer_t, dynamic_loss_scale=True)
-            optimizer_s = FP16_Optimizer(optimizer_s, dynamic_loss_scale=True)
         else:
             optimizer_t = FP16_Optimizer(optimizer_t, static_loss_scale=args.loss_scale)
-            optimizer_s = FP16_Optimizer(optimizer_s, static_loss_scale=args.loss_scale)
-
     else:
         optimizer_t = BertAdam(optimizer_grouped_parameters_t,
                                lr=args.learning_rate,
                                warmup=args.warmup_proportion,
                                t_total=num_train_optimization_steps)
-        optimizer_s = BertAdam(optimizer_grouped_parameters_s,
-                               lr=args.learning_rate,
-                               warmup=args.warmup_proportion,
-                               t_total=num_train_optimization_steps)
-
     if args.do_train:
-
+        # save init state
+        torch.save(model_teacher.state_dict(), "init.pkl")
         # step 0: load train examples
         train_features = convert_examples_to_features(
             train_examples, label_list, args.max_seq_length, tokenizer)
@@ -988,10 +975,11 @@ def main():
         num_train_epochs = 10
         model_teacher = train(model_teacher, args, n_gpu, optimizer_t, num_train_optimization_steps, num_labels,
                               train_dataloader, device, num_train_epochs)
+        torch.save(model_teacher.state_dict(), "teacher.pkl")
         model_teacher.to(device)
         print()
-        print("teacher model accuracy:")
-        evaluate_for_dbpedia(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer)
+        #print("teacher model accuracy:")
+        #evaluate_for_dbpedia(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer)
 
         # Step 2: predict the val_set
         eval_examples = processor.get_dev_examples(args.data_dir)
@@ -1044,7 +1032,11 @@ def main():
         # step 4: train student model with teacher labeled data
         print("*" * 10 + "train student model" + "*" * 10)
         print("train set:", input_ids_stu.shape)
+        print("seek", input_ids_stu)
         print("input_mask_stu", input_mask_stu.shape)
+        print("seek", input_mask_stu[0])
+        print("segment_ids_stu", segment_ids_stu.shape)
+        print("seek", segment_ids_stu[0])
         print("label_ids_stu", label_ids_stu.shape)
         print("predict", label_ids_stu[100:150])
         print("true", label_ids_true[100:150])
@@ -1052,26 +1044,27 @@ def main():
         # for debug
 
         train_dataloader_stu = load_train_data(args, input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu)
-        model_student.train()
-        model_student = train(model_student, args, n_gpu, optimizer_s, num_train_optimization_steps, num_labels,
+        #model_teacher.load_state_dict(torch.load("init.pkl"))
+        model_teacher = train(model_teacher, args, n_gpu, optimizer_t, num_train_optimization_steps, num_labels,
                               train_dataloader_stu, device, 2)
-        model_student.to(device)
+        model_teacher.to(device)
+        #torch.save(model_teacher.state_dict(), "student1.pkl")
         print()
         print("student before ft:")
-        model_student.eval()
-        evaluate_for_dbpedia(model_student, args, processor, device, global_step, task_name, label_list, tokenizer)
+
+        evaluate_for_dbpedia(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer)
 
         # step 5: train student model with true data
         print("*" * 10 + "refine student model" + "*" * 10)
         print("train set:", input_ids_train.shape)
-        model_student.train()
-        model_student = train(model_student, args, n_gpu, optimizer_s, num_train_optimization_steps, num_labels,
+
+        model_teacher = train(model_teacher, args, n_gpu, optimizer_t, num_train_optimization_steps, num_labels,
                               train_dataloader, device, args.num_train_epochs)
-        model_student.to(device)
+        model_teacher.to(device)
         print()
         print("student after ft:")
-        model_student.eval()
-        evaluate_for_dbpedia(model_student, args, processor, device, global_step, task_name, label_list, tokenizer)
+        model_teacher.eval()
+        evaluate_for_dbpedia(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer)
 
     # do eval
     if args.do_eval and (args.local_rank == -1 or torch.distributed.get_rank() == 0):

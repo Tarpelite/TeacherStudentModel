@@ -112,6 +112,8 @@ venv.bak/
 /dbpedia*
 /trec*
 /yelp*
+/model*
+/test*
 
 # small_data
 

@@ -56,7 +56,7 @@ def train(model, args, n_gpu, train_dataloader, device, num_epoch, logger):
     global_step = 0
     nb_tr_steps = 0
     tr_loss = 0
-    for _ in range(int(num_epoch)):
+    for _ in trange(int(num_epoch), desc="Epoch"):
         tr_loss = 0
         nb_tr_examples, nb_tr_steps = 0, 0
         for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
