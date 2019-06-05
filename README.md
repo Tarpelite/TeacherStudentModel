@@ -20,3 +20,15 @@ python BERT\examples\TeacherStudentModel_for_dbpedia.py \
 # data and pretrained_model
 
 need to add by yourself
+
+```
+--task_name dbpedia \ 
+--do_train --do_eval --do_lower_case \ 
+--data_dir F:\shaohanh\git\PFC\raw_data\dbpedia\few_shot \
+--bert_model F:\shaohanh\git\pytorch-pretrained-BERT\data\bert-base-uncased \
+--max_seq_length 128 --train_batch_size 50 \
+--eval_batch_size 128 --learning_rate 2e-5 \
+--num_train_epochs 10.0 \ 
+--output_dir F:\shaohanh\git\PFC\raw_data\dbpedia\few_shot\ts_model \
+
+```
