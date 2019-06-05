@@ -49,9 +49,9 @@
 #### results
 
 |    Method                     |  trec6        | dbpedia-10k |   yelp-10k|
-|  :---------                   | :------:      | :------:    | :------:  |
-|  teacher model/original bert  | -             | 0.846970          | -       |
-|student model before ft        | -             | 0.850505          |    -    |
-|student model after ft         | -             | 0.876869          |   -       | 
+|:---------                     | :------:      | :------:    | :------:  |
+|teacher model/original bert    | 0.576588      | 0.846970    |0.434949   |
+|student model before ft        | 0.639748      | 0.850505    |0.410909   |
+|student model after ft         | 0.721615      | 0.876869    |0.425556   | 
 
 
