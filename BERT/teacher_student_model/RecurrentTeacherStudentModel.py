@@ -903,12 +903,14 @@ def main():
         # step 6+ : start loop
         
         cnt = 1
-        while abs(teacher_accuracy - s2_accuracy) > threshold:
+        for i in range(0, 5):
             cnt += 1
+            teacher_accuracy = s2_accuracy
             logger.info("***** Teacher acc:" + str(teacher_accuracy) +" *****")
             logger.info("***** Start The Iter " + str(cnt) + " *****")
 
             model_teacher = model_student
+
 
             logger.info("***** Building new student model *****")
             model_student = create_model(args, cache_dir, num_labels, device)
