@@ -1,0 +1,11 @@
+{
+    "sshfs.configs": [
+        {
+            "host": "GCRAZGDL517.redmond.corp.microsoft.com",
+            "name": "gpu1",
+            "privateKeyPath": "c:\\Users\\v-tiache\\.ssh\\id_rsa",
+            "root": "/data/home/v-tiache/cty/TeacherStudentModel",
+            "username": "FAREAST.v-tiache"
+        }
+    ]
+}

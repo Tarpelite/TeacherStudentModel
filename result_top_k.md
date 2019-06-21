@@ -19,10 +19,10 @@
 
 #### results
 |    Method                     |  trec6        | dbpedia-10k |   yelp-10k|
-|  :---------                   | :------:      | :------:    | :------:  |
-|teacher model/original bert    | 0.704019      | 0.886667    | 0.396263  |
-|student model before ft        | 0.651232      | 0.872020    | 0.369495  |
-|student model after ft         | 0.777181      | 0.897475    | 0.410909  | 
+|  :---------                   | :------:      | :------:    | :------:   |
+|teacher model/original bert    | 0.704019      | 0.886667    | 0.396263   |
+|student model before ft        | 0.651232      | 0.872020    | 0.369495   |
+|student model after ft         | **0.777181**  | 0.897475    |**0.410909**| 
 
 ### Task 2
 
@@ -51,7 +51,7 @@
 |    Method                     |  trec6        | dbpedia-10k |   yelp-10k|
 |  :---------                   | :------:      | :------:    | :------:  |
 |teacher model/original bert    | 0.704019      | 0.886667    | 0.396263  |
-|student model before ft        | 0.750880      | 0.901414    | 0.404444  |
+|student model before ft        | 0.750880      | **0.901414**    | 0.404444  |
 |student model after ft         | 0.726616      | 0.899495    | 0.387879  | 
 
 ### Task 4

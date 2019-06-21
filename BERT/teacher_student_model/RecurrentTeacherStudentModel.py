@@ -56,6 +56,13 @@ def accuracy(out, labels):
 
     return
 
+def vote_for_choice(acc_t, acc_s1, acc_s2):
+    '''
+        vote for the best model
+    '''
+    acc_list = [acc_t, acc_s1, acc_s2]
+    return acc_list.index(max(acc_list))
+
 
 def top_k_choose(probas_val, top_k):
     '''
@@ -117,7 +124,6 @@ def balance_top_k_choose(probas_val, top_k):
 
 def evaluate_for_dbpedia(model, device, eval_data_loader, logger):
     model.eval()
-
     eval_loss, eval_accuracy = 0, 0
     nb_eval_steps, nb_eval_examples = 0, 0
 
@@ -148,6 +154,28 @@ def evaluate_for_dbpedia(model, device, eval_data_loader, logger):
     eval_accuracy = eval_accuracy / nb_eval_examples
 
     logger.info("accuracy: %f ", eval_accuracy)
+    return eval_accuracy
+
+def create_model(args, cache_dir, num_labels, device):
+    '''
+        create new model
+    '''
+    model_new = BertForSequenceClassification.from_pretrained(args.bert_model,
+                                                            cache_dir = cache_dir,
+                                                            num_labels=num_labels)
+    if args.fp16:
+        model_new.half()    
+    model_new.to(device)
+    if args.local_rank != -1:
+        try:
+            from apex.parallel import DistributedDataParallel as DDP
+        except ImportError:
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+        model_new = DDP(model_new)
+    elif torch.cuda.device_count() > 1:
+         model_new = torch.nn.DataParallel(model_new)
+    return model_new
 
 
 def evaluate(model, args, processor, device, global_step, task_name, label_list, tokenizer, report_path):
@@ -692,10 +720,15 @@ def main():
                         type=float,
                         default=3.0,
                         help="Total number of student model training epochs to perform.")
+    parser.add_argument("--threshold",
+                        type=float,
+                        default=0.05,
+                        help="threshold for improvenesss of model")
     parser.add_argument('--server_ip', type=str, default='', help="Can be used for distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="Can be used for distant debugging.")
     args = parser.parse_args()
 
+    threshold = args.threshold
     if args.server_ip and args.server_port:
         # Distant debugging - see https://code.visualstudio.com/docs/python/debugging#_attach-to-a-local-script
         import ptvsd
@@ -825,7 +858,7 @@ def main():
         model_teacher.to(device)
 
         logger.info("***** Evaluate teacher model *****")
-        evaluate_for_dbpedia(model_teacher, device, eval_data_loader, logger)
+        teacher_accuracy = evaluate_for_dbpedia(model_teacher, device, eval_data_loader, logger)
 
         # Step 2: predict the val_set
         logger.info("***** Product pseudo label from teacher model *****")
@@ -858,20 +891,57 @@ def main():
         model_student.to(device)
 
         logger.info("***** Evaluate student model 1 *****")
-        evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)
+        s1_accuracy = evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)
 
         # step 5: train student model with true data
         logger.info("***** Running train student model with training data *****")
         model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
         model_student.to(device)
         logger.info("***** Evaluate student model 2 *****")
-        evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)
+        s2_accuracy = evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)
 
-    # do eval
-    # if args.do_eval and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
-    #     logger.info("***** Running  teacher evaluation *****")
-    #     evaluate_for_dbpedia(model_teacher, args, processor, device, global_step, task_name, label_list, tokenizer)
+        # step 6+ : start loop
+        
+        cnt = 1
+        while abs(teacher_accuracy - s2_accuracy) > threshold:
+            cnt += 1
+            logger.info("***** Teacher acc:" + str(teacher_accuracy) +" *****")
+            logger.info("***** Start The Iter " + str(cnt) + " *****")
 
+            model_teacher = model_student
+
+            logger.info("***** Building new student model *****")
+            model_student = create_model(args, cache_dir, num_labels, device)
+
+            logger.info("***** Product pseudo label from teacher model *****")
+            probas_val = predict_for_dbpedia(model_teacher, args, eval_data_loader, device)
+            label_ids_predict = np.array(probas_val)
+
+            permutation = balance_top_k_choose(probas_val, 500)
+
+            input_ids_stu = np.array(all_input_ids[permutation])
+            input_mask_stu = np.array(all_input_mask[permutation])
+            segment_ids_stu = np.array(all_segment_ids[permutation])
+            label_ids_stu = np.array(label_ids_predict[permutation])
+            # label_ids_true = label_ids_val_all[permutation]
+            label_ids_stu = np.array([np.argmax(x, axis=0) for x in label_ids_stu])
+
+            logger.info("student label distribution = %s", collections.Counter(label_ids_stu))
+
+            model_student = train(model_student, args, n_gpu, train_data_loader_stu, device, args.num_student_train_epochs, logger)
+            model_student.to(device)
+
+            logger.info("***** Evaluate student model 1 *****")
+            s1_accuracy = evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)
+
+            logger.info("***** Running train student model with training data *****")
+            model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
+            model_student.to(device)
+            logger.info("***** Evaluate student model 2 *****")
+            s2_accuracy = evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)
+        
+        logger.info("***** Final Iter:"+ str(cnt) +" *****")
+        logger.info("***** Final accuracy:"+ str(s2_accuracy) + " *****")
         # TODO: write accuracy
 if __name__ == "__main__":
     # processor = DbpediaProcessor()

@@ -839,7 +839,7 @@ def main():
         # TODO: write a funtion for data choosing.
       
         #permutation = top_k_choose(probas_val, 1000)
-        permutation = balance_top_k_choose(probas_val, 500)
+        permutation = balance_top_k_choose(probas_val, 200)
 
         input_ids_stu = np.array(all_input_ids[permutation])
         input_mask_stu = np.array(all_input_mask[permutation])
