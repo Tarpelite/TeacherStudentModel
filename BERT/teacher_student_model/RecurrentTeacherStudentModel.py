@@ -903,7 +903,7 @@ def main():
         # step 6+ : start loop
         
         cnt = 1
-        for i in range(0, 5):
+        for i in range(0, 20):
             cnt += 1
             teacher_accuracy = s2_accuracy
             logger.info("***** Teacher acc:" + str(teacher_accuracy) +" *****")
