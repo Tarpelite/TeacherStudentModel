@@ -644,6 +644,13 @@ def main():
     parser.add_argument("--do_lower_case",
                         action='store_true',
                         help="Set this flag if you are using an uncased model.")
+    parser.add_argument("--do_balance",
+                        action="store_true",
+                        help="Set this flag if you are using balance choose function")
+    parser.add_argument("--top_k",
+                        default=500,
+                        type=int,
+                        help="set the num of top k data TechearModel will label for StudentModel")
     parser.add_argument("--train_batch_size",
                         default=32,
                         type=int,
@@ -684,7 +691,8 @@ def main():
                         action='store_true',
                         help="Whether to use 16-bit float precision instead of 32-bit")
     parser.add_argument('--loss_scale',
-                        type=float, default=0,
+                        type=float, 
+                        default=0,
                         help="Loss scaling to improve fp16 numeric stability. Only used when fp16 set to True.\n"
                              "0 (default value): dynamic loss scaling.\n"
                              "Positive power of 2: static loss scaling value.\n")
@@ -692,6 +700,10 @@ def main():
                         type=float,
                         default=3.0,
                         help="Total number of student model training epochs to perform.")
+    parser.add_argument("--recurrent_times".
+                        type=int,
+                        default=0.
+                        help="Set the recurent times")
     parser.add_argument('--server_ip', type=str, default='', help="Can be used for distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="Can be used for distant debugging.")
     args = parser.parse_args()

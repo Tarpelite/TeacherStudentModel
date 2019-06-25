@@ -122,7 +122,7 @@ def balance_top_k_choose(probas_val, top_k):
     return permutation
             
 
-def evaluate_for_dbpedia(model, device, eval_data_loader, logger):
+def evaluate_model(model, device, eval_data_loader, logger):
     model.eval()
     eval_loss, eval_accuracy = 0, 0
     nb_eval_steps, nb_eval_examples = 0, 0
@@ -627,6 +627,87 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
         else:
             tokens_b.pop()
 
+def sample_data(args, processor, label_list, tokenizer, permutation, probas_val):
+    '''
+        Sample valiadation data with permutation
+    '''
+
+    eval_examples = processor.get_dev_examples(args.data_dir)
+    eval_features = convert_examples_to_features(
+        eval_examples, label_list, args.max_seq_length, tokenizer
+    )
+    all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
+    all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
+    all_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
+    input_ids_stu = np.array(all_input_ids[permutation])
+    input_mask_stu = np.array(all_input_mask[permutation])
+    segment_ids_stu = np.array(all_segment_ids[permutation])
+    label_ids_predict = np.array(probas_val)
+    label_ids_stu = np.array(label_ids_predict[permutation])
+    label_ids_stu = np.array([np.argmax(x, axis=0) for x in label_ids_stu])
+    return input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu
+
+def write_result(args, result:list):
+    '''
+        wirte the accuracy into the file
+        result Example:
+
+            format like:
+            teacher model, student model 1, student model 2
+            Iter1: 0.632339,0.729580,0.739026
+            Iter2: 0.739026,0.724208,0.778477
+
+            data like:
+            [
+                [0.632339, 0.729580, 0.739026],
+                [0.739026, 0.724208, 0.778477]
+            ]
+    '''
+    if args.output_dir:
+        path = os.path.join(args.output_dir, "acc_result.txt")
+    else:
+        path = os.path.join(os.getcwd(), "acc_result.txt")
+    with open(path , "w+", encoding="utf-8") as f:
+        table_head = "\tTeacherModel" + "\tStudentModel1" + "\tStudentModel2" + "\n"
+        f.wirte(table_head)
+        for row in result:
+            line = ""
+            for data in row:
+                line += str(data)  + "\t"
+            line += "\n"
+            f.write(line)
+
+def cook_data(args, processor, label_list, tokenizer):
+    '''
+        Cook training and dev data for teacher model
+    '''
+    logger.info("***** Cook training and dev data for teacher model *****")
+    train_examples = processor.get_train_examples(args.data_dir)
+    train_features = convert_examples_to_features(
+        train_examples, label_list, args.max_seq_length, tokenizer)
+    logger.info("  Num examples = %d", len(train_examples))
+    logger.info("  Batch size = %d", args.train_batch_size)
+
+    input_ids_train = np.array([f.input_ids for f in train_features])
+    input_mask_train = np.array([f.input_mask for f in train_features])
+    segment_ids_train = np.array([f.segment_ids for f in train_features])
+    label_ids_train = np.array([f.label_id for f in train_features])
+    train_data_loader = load_train_data(args, input_ids_train, input_mask_train, segment_ids_train, label_ids_train)
+
+    eval_examples = processor.get_dev_examples(args.data_dir)
+    eval_features = convert_examples_to_features(
+        eval_examples, label_list, args.max_seq_length, tokenizer
+    )
+    all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
+    all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
+    all_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
+    all_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
+    eval_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
+    eval_sampler = SequentialSampler(eval_data)
+    eval_data_loader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
+
+    return train_data_loader, eval_data_loader
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -672,6 +753,17 @@ def main():
     parser.add_argument("--do_lower_case",
                         action='store_true',
                         help="Set this flag if you are using an uncased model.")
+    parser.add_argument("--do_balance",
+                        action="store_true",
+                        help="Set this flag if you want to use the balanced choose function")
+    parser.add_argument("--top_k",
+                        default=500,
+                        type=int,
+                        help="Set the num of top k pseudo labels Teacher will choose for Student to learn")
+    parser.add_argument("--recurrent_times",
+                        default = 0,
+                        type=int,
+                        help="Set the times for loop")
     parser.add_argument("--train_batch_size",
                         default=32,
                         type=int,
@@ -728,7 +820,6 @@ def main():
     parser.add_argument('--server_port', type=str, default='', help="Can be used for distant debugging.")
     args = parser.parse_args()
 
-    threshold = args.threshold
     if args.server_ip and args.server_port:
         # Distant debugging - see https://code.visualstudio.com/docs/python/debugging#_attach-to-a-local-script
         import ptvsd
@@ -793,94 +884,37 @@ def main():
 
     tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
 
-    train_examples = None
-
     logger.info("***** Build teacher model *****")
     # Prepare model
     cache_dir = args.cache_dir
-    model_teacher = BertForSequenceClassification.from_pretrained(args.bert_model,
-                                                                  cache_dir=cache_dir,
-                                                                  num_labels=num_labels)
+    model_teacher  = create_model(args, cache_dir, num_labels, device)
     logger.info("***** Build student model *****")
-    model_student = BertForSequenceClassification.from_pretrained(args.bert_model,
-                                                                  cache_dir=cache_dir,
-                                                                  num_labels=num_labels)
-    if args.fp16:
-        model_teacher.half()
-        model_student.half()
-    model_teacher.to(device)
-    model_student.to(device)
-    if args.local_rank != -1:
-        try:
-            from apex.parallel import DistributedDataParallel as DDP
-        except ImportError:
-            raise ImportError(
-                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
 
-        model_teacher = DDP(model_teacher)
-        model_student = DDP(model_student)
-    elif n_gpu > 1:
-        model_teacher = torch.nn.DataParallel(model_teacher)
-        model_student = torch.nn.DataParallel(model_student)
-
+    model_student = create_model(args, cache_dir, num_labels, device)
+    
     logger.info("***** Finish teacher and student model building *****")
 
     if args.do_train:
         # step 0: load train examples
-        logger.info("***** Cook training and dev data for teacher model *****")
-        train_examples = processor.get_train_examples(args.data_dir)
-        train_features = convert_examples_to_features(
-            train_examples, label_list, args.max_seq_length, tokenizer)
-        logger.info("  Num examples = %d", len(train_examples))
-        logger.info("  Batch size = %d", args.train_batch_size)
+        train_data_loader, eval_data_loader = cook_data(args, processor, label_list, tokenizer)
 
-        input_ids_train = np.array([f.input_ids for f in train_features])
-        input_mask_train = np.array([f.input_mask for f in train_features])
-        segment_ids_train = np.array([f.segment_ids for f in train_features])
-        label_ids_train = np.array([f.label_id for f in train_features])
-        train_data_loader = load_train_data(args, input_ids_train, input_mask_train, segment_ids_train, label_ids_train)
-
-        eval_examples = processor.get_dev_examples(args.data_dir)
-        eval_features = convert_examples_to_features(
-            eval_examples, label_list, args.max_seq_length, tokenizer
-        )
-        all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
-        all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
-        all_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
-        all_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
-        eval_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
-        eval_sampler = SequentialSampler(eval_data)
-        eval_data_loader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
-
-        num_train_epochs = args.num_train_epochs
-        model_teacher = train(model_teacher, args, n_gpu, train_data_loader, device, num_train_epochs, logger)
-
+        model_teacher = train(model_teacher, args, n_gpu, train_data_loader, device, args.num_train_epochs, logger)
         model_teacher.to(device)
 
         logger.info("***** Evaluate teacher model *****")
-        teacher_accuracy = evaluate_for_dbpedia(model_teacher, device, eval_data_loader, logger)
+        teacher_accuracy = evaluate_model(model_teacher, device, eval_data_loader, logger)
 
         # Step 2: predict the val_set
         logger.info("***** Product pseudo label from teacher model *****")
-        # TODO: duplicate with  Evaluate teacher model
-
         probas_val = predict_for_dbpedia(model_teacher, args, eval_data_loader, device)
-        label_ids_predict = np.array(probas_val)
     
 
         # Step 3: choose top-k data_val and reset train_data
-        # TODO: write a funtion for data choosing.
-      
-        #permutation = top_k_choose(probas_val, 1000)
-        permutation = balance_top_k_choose(probas_val, 500)
-
-        input_ids_stu = np.array(all_input_ids[permutation])
-        input_mask_stu = np.array(all_input_mask[permutation])
-        segment_ids_stu = np.array(all_segment_ids[permutation])
-        label_ids_stu = np.array(label_ids_predict[permutation])
-        # label_ids_true = label_ids_val_all[permutation]
-        label_ids_stu = np.array([np.argmax(x, axis=0) for x in label_ids_stu])
-
+        if args.do_balance:
+            permutation = balance_top_k_choose(probas_val, args.top_k)
+        else:
+            permutation = top_k_choose(probas_val, args.top_k)
+        input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu = sample_data(args, processor, label_list, tokenizer, permutation, probas_val)
         logger.info("student label distribution = %s", collections.Counter(label_ids_stu))
 
         # step 4: train student model with teacher labeled data
@@ -891,19 +925,19 @@ def main():
         model_student.to(device)
 
         logger.info("***** Evaluate student model 1 *****")
-        s1_accuracy = evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)
+        s1_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
 
         # step 5: train student model with true data
         logger.info("***** Running train student model with training data *****")
         model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
         model_student.to(device)
         logger.info("***** Evaluate student model 2 *****")
-        s2_accuracy = evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)
+        s2_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
+        results = [[teacher_accuracy, s1_accuracy, s2_accuracy]]
 
         # step 6+ : start loop
-        
         cnt = 1
-        for i in range(0, 20):
+        for i in range(0, args.recurrent_times):
             cnt += 1
             teacher_accuracy = s2_accuracy
             logger.info("***** Teacher acc:" + str(teacher_accuracy) +" *****")
@@ -917,16 +951,13 @@ def main():
 
             logger.info("***** Product pseudo label from teacher model *****")
             probas_val = predict_for_dbpedia(model_teacher, args, eval_data_loader, device)
-            label_ids_predict = np.array(probas_val)
 
-            permutation = balance_top_k_choose(probas_val, 500)
+            if args.do_balance:
+                permutation = balance_top_k_choose(probas_val, args.top_k)
+            else:
+                permutation = top_k_choose(probas_val, args.top_k)
 
-            input_ids_stu = np.array(all_input_ids[permutation])
-            input_mask_stu = np.array(all_input_mask[permutation])
-            segment_ids_stu = np.array(all_segment_ids[permutation])
-            label_ids_stu = np.array(label_ids_predict[permutation])
-            # label_ids_true = label_ids_val_all[permutation]
-            label_ids_stu = np.array([np.argmax(x, axis=0) for x in label_ids_stu])
+            input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu = sample_data(args, processor, label_list, tokenizer, permutation, probas_val)
 
             logger.info("student label distribution = %s", collections.Counter(label_ids_stu))
 
@@ -934,18 +965,19 @@ def main():
             model_student.to(device)
 
             logger.info("***** Evaluate student model 1 *****")
-            s1_accuracy = evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)
+            s1_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
 
             logger.info("***** Running train student model with training data *****")
             model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
             model_student.to(device)
             logger.info("***** Evaluate student model 2 *****")
-            s2_accuracy = evaluate_for_dbpedia(model_student, device, eval_data_loader, logger)
-        
+            s2_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
+            results.append([teacher_accuracy, s1_accuracy, s2_accuracy])
+
         logger.info("***** Final Iter:"+ str(cnt) +" *****")
-        logger.info("***** Final accuracy:"+ str(s2_accuracy) + " *****")
-        # TODO: write accuracy
+        logger.info("***** Final Accuracy:"+ str(s2_accuracy) + " *****")
+        logger.info("***** Writing Results *****")
+        write_result(args, results)
+        
 if __name__ == "__main__":
-    # processor = DbpediaProcessor()
-    # processor.get_train_examples("dbpedia")
     main()
