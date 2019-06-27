@@ -176,119 +176,9 @@ def create_model(args, cache_dir, num_labels, device):
     elif torch.cuda.device_count() > 1:
          model_new = torch.nn.DataParallel(model_new)
     return model_new
+    
 
-
-def evaluate(model, args, processor, device, global_step, task_name, label_list, tokenizer, report_path):
-    # global global_step
-    eval_examples = processor.get_dev_examples(args.data_dir)
-
-    eval_features = convert_examples_to_features(
-        eval_examples, label_list, args.max_seq_length, tokenizer)
-    all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
-    all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
-    all_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
-    all_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
-    eval_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
-
-    eval_sampler = SequentialSampler(eval_data)
-    eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
-
-    model.eval()
-    output_file_path = os.path.join(args.output_dir, "results_epoch_{0}.txt".format(10))
-    output_file_writer = open(output_file_path, 'w', encoding='utf-8')
-    eval_loss, eval_accuracy = 0, 0
-    nb_eval_steps, nb_eval_examples = 0, 0
-    for input_ids, input_mask, segment_ids, label_ids in eval_dataloader:
-        input_ids = input_ids.to(device)
-        input_mask = input_mask.to(device)
-        segment_ids = segment_ids.to(device)
-        label_ids = label_ids.to(device)
-
-        with torch.no_grad():
-            logits = model(input_ids, segment_ids, input_mask)
-
-        logits = logits.detach().cpu().numpy()
-        label_ids = label_ids.to('cpu').numpy()
-        # tmp_eval_accuracy = accuracy(logits, label_ids)
-        # print(logits)
-
-        for logit, label_id in zip(logits, label_ids):
-            output_file_writer.write(str(logit).replace('\n', ' '))
-            output_file_writer.write('\t')
-            output_file_writer.write(str(label_id).replace('\n', ' '))
-            output_file_writer.write('\n')
-
-        # eval_loss += tmp_eval_loss.mean().item()
-        # eval_accuracy += tmp_eval_accuracy
-
-        nb_eval_examples += input_ids.size(0)
-        nb_eval_steps += 1
-
-    eval_loss = eval_loss / nb_eval_steps
-    # eval_accuracy = eval_accuracy / nb_eval_examples
-
-    result = {'eval_loss': eval_loss,
-              'global_step': global_step,
-              # 'loss': tr_loss / nb_tr_steps
-              }
-
-    output_eval_file = os.path.join(args.output_dir, "eval_results_epoch_{0}.txt".format(10))
-    with open(output_eval_file, "w") as writer:
-        logger.info("***** Eval results *****")
-        for key in sorted(result.keys()):
-            logger.info("  %s = %s", key, str(result[key]))
-            writer.write("%s = %s\n" % (key, str(result[key])))
-
-    # Save pytorch-model
-    output_model_file = os.path.join(args.output_dir, "fine_tune_model_epoch_{0}.bin".format(10))
-    torch.save(model.state_dict(), output_model_file)
-
-    aus_label_path = args.data_dir + r"/aus_dev.label.csv"
-    ukd_label_path = args.data_dir + r"/ukd_dev.label.csv"
-    if task_name == 'aus':
-        label_path = aus_label_path
-    else:
-        label_path = ukd_label_path
-    output_file_writer.close()
-
-    convert(output_file_path, task_name)
-    evaluation_report(label_path, output_file_path + '.label', task_name.upper(), output_file_path + '.eval',
-                      report_path)
-
-    true_file = label_path
-    pred_file = output_file_path + ".label"
-
-    true_labels = open(true_file, 'r', encoding='utf-8').readlines()
-    true_labels = [true_label.strip() for true_label in true_labels]
-    pred_labels = open(pred_file, 'r', encoding='utf-8').readlines()
-    pred_labels = [pred_label.strip() for pred_label in pred_labels]
-    print("true labels", true_labels)
-    print("pred labels", pred_labels)
-
-
-def predict(model, args, eval_dataloader, device):
-    '''
-        predict val data
-    '''
-    predict_result = []
-    model.eval()
-    for input_ids, input_mask, segment_ids, label_ids in eval_dataloader:
-        input_ids = input_ids.to(device)
-        input_mask = input_mask.to(device)
-        segment_ids = segment_ids.to(device)
-        label_ids = label_ids.to(device)
-
-        with torch.no_grad():
-            logits = model(input_ids, segment_ids, input_mask)
-
-        logits = logits.detach().cpu().numpy()
-        predict_result.extend(logits)
-
-    predict_result = np.array(predict_result)
-    return predict_result
-
-
-def predict_for_dbpedia(model, args, eval_dataloader, device):
+def predict_model(model, args, eval_dataloader, device):
     '''
         predict val data
     '''
@@ -664,12 +554,14 @@ def write_result(args, result:list):
             ]
     '''
     if args.output_dir:
+        if not os.path.exists(args.output_dir):
+            os.mkdir(args.output_dir)
         path = os.path.join(args.output_dir, "acc_result.txt")
     else:
         path = os.path.join(os.getcwd(), "acc_result.txt")
     with open(path , "w+", encoding="utf-8") as f:
         table_head = "\tTeacherModel" + "\tStudentModel1" + "\tStudentModel2" + "\n"
-        f.wirte(table_head)
+        f.write(table_head)
         for row in result:
             line = ""
             for data in row:
@@ -906,7 +798,7 @@ def main():
 
         # Step 2: predict the val_set
         logger.info("***** Product pseudo label from teacher model *****")
-        probas_val = predict_for_dbpedia(model_teacher, args, eval_data_loader, device)
+        probas_val = predict_model(model_teacher, args, eval_data_loader, device)
     
 
         # Step 3: choose top-k data_val and reset train_data
@@ -950,7 +842,7 @@ def main():
             model_student = create_model(args, cache_dir, num_labels, device)
 
             logger.info("***** Product pseudo label from teacher model *****")
-            probas_val = predict_for_dbpedia(model_teacher, args, eval_data_loader, device)
+            probas_val = predict_model(model_teacher, args, eval_data_loader, device)
 
             if args.do_balance:
                 permutation = balance_top_k_choose(probas_val, args.top_k)
