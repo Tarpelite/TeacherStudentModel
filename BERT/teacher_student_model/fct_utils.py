@@ -1,7 +1,7 @@
 from tqdm import tqdm, trange
 import torch
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
-
+import numpy as np
 
 def init_optimizer(model, args, data_loader):
     num_train_optimization_steps = None
@@ -43,6 +43,60 @@ def init_optimizer(model, args, data_loader):
                                t_total=num_train_optimization_steps)
     return optimizer, num_train_optimization_steps
 
+def KNN_train(model, train_dataloader, logger):
+    '''
+        train KNN model
+    '''
+    logger.info("***** Running train *****")
+    for _ , batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
+        batch = tuple( t for t in batch)
+        input_ids, input_mask, segment_ids, label_ids = batch
+        X = np.concatenate((input_ids, input_mask, segment_ids), axis=1)
+        Y = np.array(label_ids)
+        model.fit(X, Y)
+
+def KNN_predict(model, eval_dataloader, logger):
+    '''
+        KNN model predict
+    '''
+    predict_result = []
+
+    for _,  batch in enumerate(tqdm(eval_dataloader, desc="Iteration")):
+        batch = tuple(t for t in batch)
+        input_ids, input_mask, segment_ids, label_ids = batch
+        X = np.concatenate((input_ids, input_mask, segment_ids), axis=1)
+        outputs = model.predict_proba(X)
+        predict_result.extend(outputs)
+
+    return predict_result
+        
+
+def KNN_evaluate(model, eval_dataloader, logger):
+    '''
+        evalute KNN model
+    '''
+    logger.info("***** Running evaluate *****")
+    eval_acc = 0
+    nb_eval_examples = 0
+    for _,  batch in enumerate(tqdm(eval_dataloader, desc="Iteration")):
+        batch = tuple(t for t in batch)
+        input_ids, input_mask, segment_ids, label_ids = batch
+        X = np.concatenate((input_ids, input_mask, segment_ids), axis=1)
+        outputs = model.predict_proba(X)
+        Y = np.array(label_ids)
+        print(outputs)
+        predict_labels = np.argmax(outputs, axis= 1)
+        tmp_acc = np.sum(predict_labels == Y)
+        eval_acc += tmp_acc
+        nb_eval_examples += input_ids.size(0)
+
+    eval_acc = eval_acc / nb_eval_examples
+
+    print("accuracy:", eval_acc)
+    return eval_acc
+
+
+
 
 def train(model, args, n_gpu, train_dataloader, device, num_epoch, logger):
     '''
@@ -62,10 +116,6 @@ def train(model, args, n_gpu, train_dataloader, device, num_epoch, logger):
         for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
             batch = tuple(t.to(device) for t in batch)
             input_ids, input_mask, segment_ids, label_ids = batch
-            # print("input_ids_shape", input_ids.shape)
-            # print("input_mask_shape", input_mask.shape)
-            # print("segment_ids_shape", segment_ids.shape)
-            # print("label_ids_shape", label_ids.shape)
             loss = model(input_ids, segment_ids, input_mask, label_ids)
             if n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu.
@@ -91,18 +141,4 @@ def train(model, args, n_gpu, train_dataloader, device, num_epoch, logger):
                 optimizer.step()
                 optimizer.zero_grad()
                 global_step += 1
-    '''
-    ## save model
-    model_to_save = model.module if hasattr(model, 'module') else model  # Only save the model it-self
-    output_model_file = os.path.join(args.output_dir, WEIGHTS_NAME)
-    torch.save(model_to_save.state_dict(), output_model_file)
-    output_config_file = os.path.join(args.output_dir, CONFIG_NAME)
-    with open(output_config_file, 'w') as f:
-        f.write(model_to_save.config.to_json_string())
-
-    # Load a trained model and config that you have fine-tuned
-    config = BertConfig(output_config_file)
-    model = BertForDocMultiClassification(config, num_labels=num_labels)
-    model.load_state_dict(torch.load(output_model_file))
-    '''
     return model
