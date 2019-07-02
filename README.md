@@ -21,6 +21,7 @@ python BERT\examples\TeacherStudentModel_for_dbpedia.py \
 
 
 ```
+python BERT\teacher_studen_model\RecurrentTeacherStudentModel.py \
 --task_name dbpedia \ 
 --do_train --do_eval --do_lower_case --do_balance\ 
 --data_dir F:\shaohanh\git\PFC\raw_data\dbpedia\few_shot \

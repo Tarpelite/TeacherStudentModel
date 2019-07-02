@@ -19,6 +19,7 @@ def init_optimizer(model, args, data_loader):
         {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
         {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
     ]
+
     if args.fp16:
         try:
             from apex.optimizers import FP16_Optimizer

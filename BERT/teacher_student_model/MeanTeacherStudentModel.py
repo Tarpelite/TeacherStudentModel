@@ -27,6 +27,8 @@ import time
 import collections
 import numpy as np
 import torch
+import copy
+import requests
 
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
                               TensorDataset)
@@ -39,7 +41,7 @@ from pytorch_pretrained_bert.tokenization import BertTokenizer
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 from pytorch_pretrained_bert.modeling_for_doc import BertForDocMultiClassification
 from processor_zoo.oocl_processor import OOCLAUSProcessor
-from teacher_student_model.fct_utils import KNN_train, KNN_evaluate, KNN_predict, train, init_optimizer
+from teacher_student_model.fct_utils import train
 from oocl_utils.evaluate import evaluation_report
 from oocl_utils.score_output_2_labels import convert
 from sklearn.neighbors import KNeighborsClassifier
@@ -107,6 +109,9 @@ def balance_top_k_choose(probas_val, top_k):
         row = [pos, probas_val[pos][label]]
         classes_unsort[label].append(row)
         pos += 1
+    # check min_len >= k
+    # min_len = np.min([len(x) for x in classes_unsort])
+    # assert(min_len >= top_k)
     for i in range(classes):
         class_i = classes_unsort[i]
         class_i.sort(key = lambda k: k[1], reverse=True)
@@ -119,40 +124,9 @@ def balance_top_k_choose(probas_val, top_k):
                 permutation.append(row[0])
     
     permutation = np.array(permutation)
+    #print("permutation", permutation)
     return permutation
-
-def KNN_random_choose(probas_labels, label_nums, k):
-    '''
-        this function is desgined for KNN use.
-        random choose k labels for use, ignoring the disribution of classes.
-    '''
-    k = k*label_nums
-    print("labels", len(probas_labels))
-    print("k", k)
-    permutation = np.random.choice(len(probas_labels), k, replace=False)
-    return permutation
-
-
-def KNN_balance_random_choose(probas_labels, label_nums, k):
-    '''
-        this function is desgined for KNN use.
-        random choose k labels for use, ignoring the disribution of classes.
-    '''
-    classes = [[] for x in range(label_nums)]
-    for i in range(len(probas_labels)):
-        classes[probas_labels[i]].append(i)
-
-    permutation = []
-    for t in classes:
-        t = np.array(t)
-        if len(t) < k:
-            permutation.extend(t)
-        else:
-            t_random_choose = np.random.choice(len(t), k, replace=False)
-            permutation.extend(t[t_random_choose])
-    permutation = np.array(permutation)
-    return permutation
-     
+            
 
 def evaluate_model(model, device, eval_data_loader, logger):
     model.eval()
@@ -262,25 +236,22 @@ def load_train_data(args, input_ids, input_mask, segment_ids, label_ids):
         train_sampler = RandomSampler(train_data)
     else:
         train_sampler = DistributedSampler(train_data)
-    train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=100)
+    train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=args.train_batch_size)
     return train_dataloader
 
 
-def load_eval_data(args, processor, device, label_list, tokenizer):
-    eval_examples = processor.get_dev_examples(args.data_dir)
-
-    eval_features = convert_examples_to_features(
-        eval_examples, label_list, args.max_seq_length, tokenizer
-    )
-    all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
-    all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
-    all_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
-    all_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
-    eval_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
+def load_eval_data(args, input_ids, input_mask, segment_ids, label_ids):
+    input_ids = torch.tensor(input_ids, dtype=torch.long)
+    input_mask = torch.tensor(input_mask, dtype=torch.long)
+    segment_ids = torch.tensor(segment_ids, dtype=torch.long)
+    label_ids = torch.tensor(label_ids, dtype=torch.long)
+    eval_data = TensorDataset(input_ids, input_mask, segment_ids, label_ids)
 
     eval_sampler = SequentialSampler(eval_data)
     eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
+
     return eval_dataloader
+
 
 def get_k_random_samples(input_ids, input_mask, segment_ids, label_ids, initial_labeled_samples, trainset_size):
     permutation = np.random.choice(trainset_size, initial_labeled_samples, replace=False)
@@ -293,6 +264,20 @@ def get_k_random_samples(input_ids, input_mask, segment_ids, label_ids, initial_
 
     return permutation, input_ids_train, input_mask_train, segment_ids_train, label_ids_train
 
+def mix_weights(model_TL, model_TU, model_student, alpha, beta, gamma):
+    '''
+        W_s = alpha*W_tl + beta*W_tu + gamma*W_s 
+    '''
+    TL_dict = model_TL.state_dict()
+    TU_dict = model_TU.state_dict()
+    S_dict = model_student.state_dict()
+    res_dict= copy.deepcopy(S_dict)
+
+    for item in TL_dict:
+        res_dict[item] = alpha * TL_dict[item] + beta * TU_dict[item] + gamma * S_dict[item]
+    
+    model_student.load_state_dict(res_dict)
+    return model_student
 
 class BaseSelectionFunction(object):
 
@@ -572,27 +557,6 @@ def sample_data(args, processor, label_list, tokenizer, permutation, probas_val)
     label_ids_stu = np.array([np.argmax(x, axis=0) for x in label_ids_stu])
     return input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu
 
-
-def KNN_sample_data(args, processor, label_list, tokenizer, permutation, probas_labels):
-    '''
-        Sample valiadation data with permutation
-    '''
-
-    eval_examples = processor.get_dev_examples(args.data_dir)
-    eval_features = convert_examples_to_features(
-        eval_examples, label_list, args.max_seq_length, tokenizer
-    )
-    all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
-    all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
-    all_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
-    input_ids_stu = np.array(all_input_ids[permutation])
-    input_mask_stu = np.array(all_input_mask[permutation])
-    segment_ids_stu = np.array(all_segment_ids[permutation])
-    label_ids_predict = np.array(probas_labels)
-    label_ids_stu = np.array(label_ids_predict[permutation])
-    return input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu
-
-
 def write_result(args, result:list):
     '''
         wirte the accuracy into the file
@@ -703,6 +667,9 @@ def main():
     parser.add_argument("--do_balance",
                         action="store_true",
                         help="Set this flag if you want to use the balanced choose function")
+    parser.add_argument("--push_message",
+                        action = "store_true",
+                        help="set this flag if you want to push message to your phone")
     parser.add_argument("--top_k",
                         default=500,
                         type=int,
@@ -763,10 +730,18 @@ def main():
                         type=float,
                         default=0.05,
                         help="threshold for improvenesss of model")
-    parser.add_argument("--n_neighbors",
-                        type=int,
-                        default=4,
-                        help="the numberof n_nerighbors")
+    parser.add_argument("--alpha",
+                        type=float,
+                        default=0.33,
+                        help = "the weights of the TL model in the final model")
+    parser.add_argument("--beta",
+                        type=float,
+                        default=0.33,
+                        help = "the weights of the TU model in the final model")
+    parser.add_argument("--gamma",
+                        type=float,
+                        default=0.33,
+                        help = "the weights of the Student model in the final model")
     parser.add_argument('--server_ip', type=str, default='', help="Can be used for distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="Can be used for distant debugging.")
     args = parser.parse_args()
@@ -835,57 +810,90 @@ def main():
 
     tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
 
-    logger.info("***** Build teacher model *****")
+    logger.info("***** Build teacher(label) model *****")
     # Prepare model
     cache_dir = args.cache_dir
-    KNN = KNeighborsClassifier(n_neighbors=num_labels)
+    model_TL  = create_model(args, cache_dir, num_labels, device)
+
+    logger.info("***** Build teacher(unlabel) model *****")
+    cache_dir = args.cache_dir
+    model_TU  = create_model(args, cache_dir, num_labels, device)
     logger.info("***** Build student model *****")
 
     model_student = create_model(args, cache_dir, num_labels, device)
     
-    logger.info("***** Finish KNN and student model building *****")
+    logger.info("***** Finish TL, TU and Student model building *****")
 
     if args.do_train:
         # step 0: load train examples
         train_data_loader, eval_data_loader = cook_data(args, processor, label_list, tokenizer)
-
-        logger.info("***** train KNN model *****")
-        KNN_train(KNN, train_data_loader, logger)
         
-        logger.info("***** Evaluate KNN model *****")
-        eval_data_loader = load_eval_data(args, processor, device, label_list, tokenizer)
-        KNN_accuracy = KNN_evaluate(KNN, eval_data_loader, logger)
+        # step 1: train the TL model with labeled data
+        logger.info("***** Running train TL model with labeled data *****")
+        model_TL = train(model_TL, args, n_gpu, train_data_loader, device, args.num_train_epochs, logger)
+        model_TL.to(device)
+
+        logger.info("***** Evaluate TL model *****")
+        model_TL_accuracy = evaluate_model(model_TL, device, eval_data_loader, logger)
 
         # Step 2: predict the val_set
-        logger.info("***** Product pseudo label from teacher model *****")
-        probas_val = KNN_predict(KNN, eval_data_loader, logger)
+        logger.info("***** Product pseudo label from TL model *****")
+        probas_val = predict_model(model_TL, args, eval_data_loader, device)
+    
 
         # Step 3: choose top-k data_val and reset train_data
         if args.do_balance:
             permutation = balance_top_k_choose(probas_val, args.top_k)
         else:
             permutation = top_k_choose(probas_val, args.top_k)
-        input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu = sample_data(args, processor, label_list, tokenizer, permutation, probas_val)
-        logger.info("student label distribution = %s", collections.Counter(label_ids_stu))
+        input_ids_TU, input_mask_TU, segment_ids_TU, label_ids_TU = sample_data(args, processor, label_list, tokenizer, permutation, probas_val)
+        logger.info("Pseudo label distribution = %s", collections.Counter(label_ids_TU))
 
-        # step 4: train student model with teacher labeled data
-        logger.info("***** Running train student model with pseudo data *****")
-        train_data_loader_stu = load_train_data(args, input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu)
+        # step 4: train TU model with Pseudo labels
+        logger.info("***** Running train TU model with pseudo data *****")
+        train_data_loader_TU = load_train_data(args, input_ids_TU, input_mask_TU, segment_ids_TU, label_ids_TU)
     
-        model_student = train(model_student, args, n_gpu, train_data_loader_stu, device, args.num_student_train_epochs, logger)
+        model_TU = train(model_TU, args, n_gpu, train_data_loader_TU, device, args.num_train_epochs, logger)
+        model_TU.to(device)
+
+        logger.info("***** Evaluate TU model  *****")
+        model_TU_accuracy = evaluate_model(model_TU, device, eval_data_loader, logger)
+
+        # step 5: train student model with Pseudo labels
+        logger.info("***** Running train student model with pseudo data *****")
+        model_student = train(model_student, args, n_gpu, train_data_loader_TU, device, args.num_student_train_epochs, logger)
         model_student.to(device)
 
-        logger.info("***** Evaluate student model 1 *****")
-        s1_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
-
-        # step 5: train student model with true data
-        logger.info("***** Running train student model with training data *****")
+        # step 6: train student model with train data
+        logger.info("***** Running train student model with pseudo data *****")
         model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
-        model_student.to(device)
-        logger.info("***** Evaluate student model 2 *****")
-        s2_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
-        results = [[KNN_accuracy, s1_accuracy, s2_accuracy]]
+
+        logger.info("***** Evaluate student model  *****")
+        model_student_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
+
+        # step 7: mix weights from TU and TL to generate new student model
+        logger.info("***** Mixing Weights *****")
+        model_student = mix_weights(model_TL, model_TU, model_student, args.alpha, args.beta, args.gamma)
+        logger.info("***** Evaluate Final model  *****")
+        final_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
+
+        results = [model_TL_accuracy, model_TU_accuracy, model_student_accuracy, final_accuracy]
         print(results)
+
+        if args.push_message:
+            api = "https://sc.ftqq.com/SCU47715T1085ec82936ebfe2723aaa3095bb53505ca315d2865a0.send"
+            title = args.task_name
+            content = ""
+            content += "Params: alpha:{} beta:{} gamma:{} \n".format(str(args.alpha), str(args.beta), str(args.gamma)) 
+            content += "model_TL: " + str(model_TL_accuracy) + "\n"
+            content += "model_TU: " + str(model_TU_accuracy) + "\n"
+            content += "model_student: " + str(model_student_accuracy) + "\n"
+            content += "Final: " + str(final_accuracy) +  "\n"
+            data = {
+                "text":title,
+                "desp":content
+            }
+            requests.post(api, data=data)
         
 if __name__ == "__main__":
     main()
