@@ -40,6 +40,7 @@ from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 from pytorch_pretrained_bert.modeling_for_doc import BertForDocMultiClassification
 from processor_zoo.oocl_processor import OOCLAUSProcessor
 from teacher_student_model.fct_utils import train
+from teacher_student_model.processor_zoo import InputExample, TrecProcessor, DBpediaProcessor, YelpProcessor
 from oocl_utils.evaluate import evaluation_report
 from oocl_utils.score_output_2_labels import convert
 from sklearn.neighbors import KNeighborsClassifier
@@ -89,6 +90,7 @@ def top_k_choose(probas_val, top_k):
             permutation.append(i)
     permutation = np.array(permutation)
     return permutation
+
 
 def balance_top_k_choose(probas_val, top_k):
     '''
@@ -159,6 +161,7 @@ def evaluate_model(model, device, eval_data_loader, logger):
 
     logger.info("accuracy: %f ", eval_accuracy)
     return eval_accuracy
+
 
 def create_model(args, cache_dir, num_labels, device):
     '''
@@ -281,27 +284,6 @@ class RandomSelection(BaseSelectionFunction):
         return selection
 
 
-class InputExample(object):
-    """A single training/test example for simple sequence classification."""
-
-    def __init__(self, guid, text_a, text_b=None, label=None):
-        """Constructs a InputExample.
-
-        Args:
-            guid: Unique id for the example.
-            text_a: string. The untokenized text of the first sequence. For single
-            sequence tasks, only this sequence must be specified.
-            text_b: (Optional) string. The untokenized text of the second sequence.
-            Only must be specified for sequence pair tasks.
-            label: (Optional) string. The label of the example. This should be
-            specified for train and dev examples, but not for test examples.
-        """
-        self.guid = guid
-        self.text_a = text_a
-        self.text_b = text_b
-        self.label = label
-
-
 class InputFeatures(object):
     """A single set of features of data."""
 
@@ -310,116 +292,6 @@ class InputFeatures(object):
         self.input_mask = input_mask
         self.segment_ids = segment_ids
         self.label_id = label_id
-
-
-class DataProcessor(object):
-    """Base class for data converters for sequence classification data sets."""
-
-    def get_train_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for the train set."""
-        raise NotImplementedError()
-
-    def get_dev_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for the dev set."""
-        raise NotImplementedError()
-
-    def get_labels(self):
-        """Gets the list of labels for this data set."""
-        raise NotImplementedError()
-
-    @classmethod
-    def _read_tsv(cls, input_file, quotechar=None):
-        """Reads a tab separated value file."""
-        with open(input_file, "r", encoding='utf-8') as f:
-            reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
-            lines = []
-            for line in reader:
-                lines.append(line)
-            return lines
-
-
-class TrecProcessor(DataProcessor):
-    """Processor for the CoLA data set (GLUE version)."""
-
-    def get_train_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "train.txt")), "train")
-
-    def get_dev_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "dev.txt")), "dev")
-
-    def get_labels(self):
-        """See base class."""
-        return ['0', '1', '2', '3', '4', '5']
-
-    def _create_examples(self, lines, set_type):
-        """Creates examples for the training and dev sets."""
-        examples = []
-        for (i, line) in enumerate(lines):
-            guid = "%s-%s" % (set_type, i)
-            text_a = line[0]
-            label = line[1]
-            examples.append(
-                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
-        return examples
-
-class DBpediaProcessor(DataProcessor):
-    """Processor for the CoLA data set (GLUE version)."""
-
-    def get_train_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "train.txt")), "train")
-
-    def get_dev_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "dev.txt")), "dev")
-
-    def get_labels(self):
-        """See base class."""
-        return [str(i) for i in range(1, 15)]
-
-    def _create_examples(self, lines, set_type):
-        """Creates examples for the training and dev sets."""
-        examples = []
-        for (i, line) in enumerate(lines):
-            guid = "%s-%s" % (set_type, i)
-            text_a = line[0]
-            label = line[1]
-            examples.append(
-                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
-        return examples
-class YelpProcessor(DataProcessor):
-    """Processor for the CoLA data set (GLUE version)."""
-
-    def get_train_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "train.txt")), "train")
-
-    def get_dev_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "dev.txt")), "dev")
-
-    def get_labels(self):
-        """See base class."""
-        return ['1', '2', '3', '4', '5']
-
-    def _create_examples(self, lines, set_type):
-        """Creates examples for the training and dev sets."""
-        examples = []
-        for (i, line) in enumerate(lines):
-            guid = "%s-%s" % (set_type, i)
-            text_a = line[0]
-            label = line[1]
-            examples.append(
-                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
-        return examples
 
 
 def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer):
@@ -521,6 +393,7 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
         else:
             tokens_b.pop()
 
+
 def sample_data(args, processor, label_list, tokenizer, permutation, probas_val):
     '''
         Sample valiadation data with permutation
@@ -540,6 +413,7 @@ def sample_data(args, processor, label_list, tokenizer, permutation, probas_val)
     label_ids_stu = np.array(label_ids_predict[permutation])
     label_ids_stu = np.array([np.argmax(x, axis=0) for x in label_ids_stu])
     return input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu
+
 
 def write_result(args, result:list):
     '''
@@ -571,6 +445,7 @@ def write_result(args, result:list):
                 line += str(data)  + "\t"
             line += "\n"
             f.write(line)
+
 
 def cook_data(args, processor, label_list, tokenizer):
     '''
@@ -873,6 +748,7 @@ def main():
         logger.info("***** Final Accuracy:"+ str(s2_accuracy) + " *****")
         logger.info("***** Writing Results *****")
         write_result(args, results)
-        
+
+      
 if __name__ == "__main__":
     main()
