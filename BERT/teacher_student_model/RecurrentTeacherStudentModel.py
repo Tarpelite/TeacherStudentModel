@@ -680,6 +680,8 @@ def main():
     
 
         # Step 3: choose top-k data_val and reset train_data
+        # TODO: move selection methods to selection_zoo.
+        
         if args.do_balance:
             permutation = balance_top_k_choose(probas_val, args.top_k)
         else:
