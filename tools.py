@@ -25,6 +25,13 @@ def sample_data(sample_rate):
                 out_lines = [[x[1]] for x in out_lines]
                 for line in out_lines:
                     writer.writerow(line)
+
+def create_testset(sample_rate, dev_path):
+    '''
+        to split dev data into test while keeping the distribution rate
+    '''
+    train_path = 
+
         
 
 if __name__ == "__main__":

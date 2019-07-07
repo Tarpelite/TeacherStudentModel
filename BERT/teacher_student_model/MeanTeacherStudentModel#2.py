@@ -264,9 +264,10 @@ def get_k_random_samples(input_ids, input_mask, segment_ids, label_ids, initial_
 
     return permutation, input_ids_train, input_mask_train, segment_ids_train, label_ids_train
 
-def mix_weights(model_TL, model_TU, model_student, alpha, beta, gamma):
+
+def init_student_weights(model_TL, model_TU, model_student, alpha):
     '''
-        W_s = alpha*W_tl + beta*W_tu + gamma*W_s 
+        W_s = alpha*W_tl + (1-alpha)*W_tu
     '''
     TL_dict = model_TL.state_dict()
     TU_dict = model_TU.state_dict()
@@ -274,10 +275,11 @@ def mix_weights(model_TL, model_TU, model_student, alpha, beta, gamma):
     res_dict= copy.deepcopy(S_dict)
 
     for item in TL_dict:
-        res_dict[item] = alpha * TL_dict[item] + beta * TU_dict[item] + gamma * S_dict[item]
+        res_dict[item]  = alpha*TL_dict[item] + (1-alpha)*TU_dict[item]
     
     model_student.load_state_dict(res_dict)
     return model_student
+
 
 class BaseSelectionFunction(object):
 
@@ -409,6 +411,7 @@ class DBpediaProcessor(DataProcessor):
             examples.append(
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
+        
 class YelpProcessor(DataProcessor):
     """Processor for the CoLA data set (GLUE version)."""
 
@@ -421,7 +424,11 @@ class YelpProcessor(DataProcessor):
         """See base class."""
         return self._create_examples(
             self._read_tsv(os.path.join(data_dir, "dev.txt")), "dev")
-
+    
+    def get_test_examples(self,data_dir):
+        '''See base class.'''
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "test.txt")), "test")
     def get_labels(self):
         """See base class."""
         return ['1', '2', '3', '4', '5']
@@ -620,6 +627,7 @@ def cook_data(args, processor, label_list, tokenizer):
     return train_data_loader, eval_data_loader
 
 
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -674,10 +682,6 @@ def main():
                         default=500,
                         type=int,
                         help="Set the num of top k pseudo labels Teacher will choose for Student to learn")
-    parser.add_argument("--recurrent_times",
-                        default = 0,
-                        type=int,
-                        help="Set the times for loop")
     parser.add_argument("--train_batch_size",
                         default=32,
                         type=int,
@@ -734,17 +738,15 @@ def main():
                         type=float,
                         default=0.33,
                         help = "the weights of the TL model in the final model")
-    parser.add_argument("--beta",
-                        type=float,
-                        default=0.33,
-                        help = "the weights of the TU model in the final model")
-    parser.add_argument("--gamma",
-                        type=float,
-                        default=0.33,
-                        help = "the weights of the Student model in the final model")
-    parser.add_argument("--ft_final",
+    parser.add_argument("--ft_true",
                         action="store_true",
-                        help="fine tune the final model")
+                        help="fine-tune the student model with true data")
+    parser.add_argument("--ft_pseudo",
+                        action="store_true",
+                        help="fine-tune the student model with pseudo data")
+    parser.add_argument("--ft_both",
+                        action="store_true",
+                        help="fine-tune the student model with both true and pseudo data")       
     parser.add_argument('--server_ip', type=str, default='', help="Can be used for distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="Can be used for distant debugging.")
     args = parser.parse_args()
@@ -862,49 +864,71 @@ def main():
         logger.info("***** Evaluate TU model  *****")
         model_TU_accuracy = evaluate_model(model_TU, device, eval_data_loader, logger)
 
-        # step 5: train student model with Pseudo labels
-        logger.info("***** Running train student model with pseudo data *****")
-        model_student = train(model_student, args, n_gpu, train_data_loader_TU, device, args.num_student_train_epochs, logger)
+        # step 5: init student model with mix weights from TL and TU model
+        logger.info("***** Init student model with weights from TL and TU model *****")
+        model_student = init_student_weights(model_TL, model_TU, model_student, args.alpha)
         model_student.to(device)
 
-        # step 6: train student model with train data
-        logger.info("***** Running train student model with pseudo data *****")
-        model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
+        # mix train data and pesudo data to create fine-tune dataset
+        train_examples = processor.get_train_examples(args.data_dir)
+        train_features = convert_examples_to_features(
+            train_examples, label_list, args.max_seq_length, tokenizer)
+        input_ids_train = np.array([f.input_ids for f in train_features])
+        input_mask_train = np.array([f.input_mask for f in train_features])
+        segment_ids_train = np.array([f.segment_ids for f in train_features])
+        label_ids_train = np.array([f.label_id for f in train_features])
 
+        input_ids_ft = np.concatenate((input_ids_train, np.array(input_ids_TU)), axis=0)
+        input_mask_ft = np.concatenate((input_mask_train, np.array(input_mask_TU)), axis=0)
+        segment_ids_ft = np.concatenate((segment_ids_train, np.array(segment_ids_TU)), axis=0)
+        label_ids_ft = np.concatenate((label_ids_train, np.array(label_ids_TU)), axis=0)
+
+        p = np.random.permutation(len(input_ids_ft))
+        input_ids_ft = input_ids_ft[p]
+        input_mask_ft = input_mask_ft[p]
+        segment_ids_ft = segment_ids_ft[p]
+        label_ids_ft = label_ids_ft[p]
+
+        fine_tune_dataloader = load_train_data(args, input_ids_ft, input_mask_ft, segment_ids_ft, label_ids_ft)
+
+        if args.ft_true:
+            # step 6: train student model with train data
+            logger.info("***** Running train student model with train data *****")
+            model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
+            model_student.to(device)
+
+        if args.ft_pseudo:
+            # step 7: train student model with Pseudo labels
+            logger.info("***** Running train student model with Pseudo data *****")
+            model_student = train(model_student, args, n_gpu, train_data_loader_TU, device, args.num_student_train_epochs, logger)
+            model_student.to(device)
+        
+        if args.ft_both:
+            # step 8: train student model with both train and Peudo data
+            logger.info("***** Running train student model with both train and Pseudo data *****")
+            model_student = train(model_student, args, n_gpu, fine_tune_dataloader, device, args.num_student_train_epochs, logger)
+            model_student.to(device)
+            
+        
         logger.info("***** Evaluate student model  *****")
         model_student_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
+    
 
-        # step 7: mix weights from TU and TL to generate new student model
-        logger.info("***** Mixing Weights *****")
-        model_student = mix_weights(model_TL, model_TU, model_student, args.alpha, args.beta, args.gamma)
-        logger.info("***** Evaluate Final model  *****")
-        final_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
-
-        if args.ft_final:
-            # step 8: fine tune the final model with train data
-            logger.info("Runing train final model with train data")
-            model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
-            # step 9: fine tune the final model with Pseudo labels
-            # logger.info("Runing train final model with Pseudo data")
-            # model_student = train(model_student, args, n_gpu, train_data_loader_TU, device, args.num_student_train_epochs, logger)
-            ft_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
-
-        results = [model_TL_accuracy, model_TU_accuracy, model_student_accuracy, final_accuracy]
-        if args.ft_final:
-            results.append(ft_accuracy)
+        results = [model_TL_accuracy, model_TU_accuracy, model_student_accuracy]
         print(results)
 
         if args.push_message:
             api = "https://sc.ftqq.com/SCU47715T1085ec82936ebfe2723aaa3095bb53505ca315d2865a0.send"
             title = args.task_name
+            if args.ft_true:
+                title += " ft_true "
+            if args.ft_pseudo:
+                title += "ft_pseudo"
             content = ""
-            content += "Params: alpha:{} beta:{} gamma:{} \n".format(str(args.alpha), str(args.beta), str(args.gamma)) 
+            content += "Params: alpha:{} \n".format(str(args.alpha)) 
             content += "model_TL: " + str(model_TL_accuracy) + "\n"
             content += "model_TU: " + str(model_TU_accuracy) + "\n"
             content += "model_student: " + str(model_student_accuracy) + "\n"
-            content += "Final: " + str(final_accuracy) +  "\n"
-            if args.ft_final:
-                content += "Ft_Final: " + str(ft_accuracy) +"\n"
             data = {
                 "text":title,
                 "desp":content
