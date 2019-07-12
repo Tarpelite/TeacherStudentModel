@@ -30,7 +30,7 @@ def create_testset(sample_rate, dev_path):
     '''
         to split dev data into test while keeping the distribution rate
     '''
-    train_path = 
+    dev_path  = 
 
         
 

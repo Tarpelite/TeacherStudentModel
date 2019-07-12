@@ -143,3 +143,84 @@ def train(model, args, n_gpu, train_dataloader, device, num_epoch, logger):
                 optimizer.zero_grad()
                 global_step += 1
     return model
+
+def create_model(args, cache_dir, num_labels, device):
+    '''
+        create new model
+    '''
+    model_new = BertForSequenceClassification.from_pretrained(args.bert_model,
+                                                             cache_dir = cache_dir,
+                                                             num_labels = num_labels)
+    if args.fp16:
+        model_new.half()
+    model_new.to(device)
+    if args,local_rank != -1:
+        try:
+            from apex.parallel import DistributedDataParallel as DDP
+        except ImportError:
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+        model_new = DDP(model_new)
+    elif torch.cuda.device_count() > 1:
+        model_new = torch.nn.DataParallel(model_new)
+    return model_new
+
+def predict_model(model, args, eval_dataloader, device):
+    '''
+        predict val data
+    '''
+    predict_result = []
+    model.eval()
+    for input_ids, input_mask, segment_ids, label_ids in tqdm(eval_dataloader):
+        input_ids = input_ids.to(device)
+        input_mask = input_mask.to(device)
+        segment_ids = segment_ids.to(device)
+        label_ids = label_ids.to(device)
+
+        with torch.no_grad():
+            logits = model(input_ids, segment_ids, input_mask)
+        
+        logits = logits.detach().cpu().numpy()
+        predict_results.extend(logits)
+    return logits
+
+def evaluate_model(model, device, eval_data_loader, logger):
+    '''
+        evaluate the model
+    '''
+    model.eval()
+    eval_loss, eval_accuracy = 0, 0
+    nb_eval_steps, nb_eval_examples =0, 0
+
+    idx = 0
+    for input_ids, input_mask, segment_ids, label_ids in tqdm(eval_data_loader, desc="Iteration"):
+        idx += 1
+        input_ids = input_ids.to(device)
+        input_mask = input_mask.to(device)
+        segment_ids = segment_ids.to(device)
+        label_ids = label_ids.to(device)
+
+        with torch.no_grad():
+            logits = model(input_ids, segment_ids, input_mask)
+        
+        logits = logits.detach().cpu().numpy()
+        label_ids = label_ids.to('cpu').numpy()
+        outputs = np.argmax(logits, axis=1)
+
+        if idx < 4:
+            logger.info('  prediction label = %s, reference label = %s', outputs, label_ids)
+        
+        tmp_eval_accuracy = np.sum(outputs == label_ids)
+        eval_accuracy += tmp_eval_accuracy
+
+        nb_eval_examples += input_ids.size(0)
+        nb_eval_steps += 1
+    
+    eval_accuracy = eval_accuracy / nb_eval_examples
+    logger.info("accuracy: %f", eval_accuracy)
+    return eval_accuracy
+
+
+
+
+    

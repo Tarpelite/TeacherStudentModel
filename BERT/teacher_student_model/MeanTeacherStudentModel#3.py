@@ -45,6 +45,8 @@ from teacher_student_model.processor_zoo import OOCLAUSProcessor
 from teacher_student_model.fct_utils import train
 from oocl_utils.score_output_2_labels import convert
 from sklearn.neighbors import KNeighborsClassifier
+from teacher_student_model.selection_zoo import *
+
 
 
 
@@ -56,11 +58,6 @@ logger = logging.getLogger(__name__)
 global_step = 0
 nb_tr_steps = 0
 tr_loss = 0
-
-
-def accuracy(out, labels):
-
-    return
 
 def vote_for_choice(acc_t, acc_s1, acc_s2):
     '''
