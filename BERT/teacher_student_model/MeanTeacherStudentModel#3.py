@@ -42,12 +42,11 @@ from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 from pytorch_pretrained_bert.modeling_for_doc import BertForDocMultiClassification
 from oocl_utils.evaluate import evaluation_report
 from teacher_student_model.processor_zoo import OOCLAUSProcessor
-from teacher_student_model.fct_utils import train
+from teacher_student_model.fct_utils import train, init_optimizer, create_model, predict_model,
 from oocl_utils.score_output_2_labels import convert
 from sklearn.neighbors import KNeighborsClassifier
-from teacher_student_model.selection_zoo import *
-
-
+from teacher_student_model.selection_zoo import RandomSelectionFunction, TopkSelectionFunction, BalanceTopkSelectionFunction
+from teacher_student_model.IO_utils import split, load_train_data, load_eval_data, convert_examples_to_features
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
@@ -279,7 +278,6 @@ def init_student_weights(model_TL, model_TU, model_student, alpha):
 
 
 class BaseSelectionFunction(object):
-
     def __init__(self):
         pass
 

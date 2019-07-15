@@ -45,14 +45,16 @@ class TopkSelectionFunction(object):
         permutation = np.array(permutation)
         return permutation
 
-class BalanceTopkSelectFunction(object):
+class BalanceTopkSelectionFunction(object):
     '''
         the distribution of classes is balanced and reach the num of top k.
         try best to balance.
     '''
     @staticmethod
     def select(probas_val, topk):
+        logger.info(" topk = %d", topk)
         probas_val = np.array(probas_val)
+        logger.info(" probas_val shape %d %d", probas_val.shape[0], probas_val.shape[1])
         labels = np.argmax(probas_val, axis=1)
         logger.info("label distribution = %s", collections.Counter(labels))
         classes = len(probas_val[0])

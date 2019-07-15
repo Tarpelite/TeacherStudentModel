@@ -13,7 +13,7 @@ import torch
 import copy
 import requests
 
-rom torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
+from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
                               TensorDataset)
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
@@ -56,7 +56,7 @@ def load_train_data(args, input_ids, input_mask, segment_ids, label_ids):
     train_data = TensorDataset(input_ids, input_mask, segment_ids, label_ids)
 
     train_sampler = SequentialSampler(train_data)
-    train_dataloader = DataLoader(train_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
+    train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=args.eval_batch_size)
 
     return train_dataloader
 
@@ -74,6 +74,15 @@ def load_eval_data(args, input_ids, input_mask, segment_ids, label_ids):
     eval_sampler = SequentialSampler(eval_data)
     eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
     return eval_dataloader
+
+class InputFeatures(object):
+    '''A single set of features of data'''
+    
+    def __init__(self, input_ids, input_mask, segment_ids, label_id):
+        self.input_ids = input_ids
+        self.input_mask = input_mask
+        self.segment_ids = segment_ids
+        self.label_id = label_id
 
 
 def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer):
@@ -173,6 +182,18 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
             tokens_a.pop()
         else:
             tokens_b.pop()
+
+def sample_data(input_ids, input_mask, segment_ids, probas_val, permutation):
+    '''
+        Sample validation data with permutation
+    '''
+    input_ids_stu = np.array(input_ids[permutation])
+    input_mask_stu = np.array(input_mask[permutation])
+    segment_ids_stu = np.array(segment_ids[permutation])
+    label_ids_predict = np.array(probas_val)
+    label_ids_stu = np.array(label_ids_predict[permutation])
+    label_ids_stu = np.array([np.argmax(x, axis=0) for x in label_ids_stu])
+    return input_ids_stu, input_mask_stu, segment_ids_stu, label_ids_stu
 
 
 

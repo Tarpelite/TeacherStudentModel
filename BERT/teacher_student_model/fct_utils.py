@@ -1,6 +1,11 @@
 from tqdm import tqdm, trange
 import torch
+import copy
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
+from pytorch_pretrained_bert.modeling import BertConfig, WEIGHTS_NAME, CONFIG_NAME, BertForSequenceClassification
+
+
+
 import numpy as np
 
 def init_optimizer(model, args, data_loader):
@@ -154,7 +159,7 @@ def create_model(args, cache_dir, num_labels, device):
     if args.fp16:
         model_new.half()
     model_new.to(device)
-    if args,local_rank != -1:
+    if args.local_rank != -1:
         try:
             from apex.parallel import DistributedDataParallel as DDP
         except ImportError:
@@ -169,7 +174,7 @@ def predict_model(model, args, eval_dataloader, device):
     '''
         predict val data
     '''
-    predict_result = []
+    predict_results = []
     model.eval()
     for input_ids, input_mask, segment_ids, label_ids in tqdm(eval_dataloader):
         input_ids = input_ids.to(device)
@@ -182,7 +187,7 @@ def predict_model(model, args, eval_dataloader, device):
         
         logits = logits.detach().cpu().numpy()
         predict_results.extend(logits)
-    return logits
+    return predict_results
 
 def evaluate_model(model, device, eval_data_loader, logger):
     '''
@@ -219,6 +224,21 @@ def evaluate_model(model, device, eval_data_loader, logger):
     eval_accuracy = eval_accuracy / nb_eval_examples
     logger.info("accuracy: %f", eval_accuracy)
     return eval_accuracy
+
+def init_student_weights(model_TL, model_TU, model_student, alpha):
+    '''
+        W_s = alpha*W_tl + (1-alpha)*W_tu
+    '''
+    TL_dict = model_TL.state_dict()
+    TU_dict = model_TU.state_dict()
+    S_dict = model_student.state_dict()
+    res_dict= copy.deepcopy(S_dict)
+
+    for item in TL_dict:
+        res_dict[item]  = alpha*TL_dict[item] + (1-alpha)*TU_dict[item]
+    
+    model_student.load_state_dict(res_dict)
+    return model_student   
 
 
 
