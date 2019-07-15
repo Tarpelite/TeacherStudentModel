@@ -1,6 +1,6 @@
 # Teacher-Student Model
 
-By Shanhan Huang, Tianyu Chen
+By Shaohan Huang, Tianyu Chen
 
 ## Approach
 
