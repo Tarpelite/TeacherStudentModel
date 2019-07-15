@@ -1,4 +1,4 @@
-# Teacher-Student Model, a new way in low-resource training
+# Teacher-Student Model
 
 By Shanhan Huang, Tianyu Chen
 
@@ -16,12 +16,9 @@ Teacher-Student model works well with the **BERT** architecture, we improves the
 
 |    Dataset    |  #Points  |  # Classes | % of largest class | Original Bert Accuracy | Teacher-Student Model Accuracy|
 |  :---------   | :------:  | :------:   | :------:           | :------:               | :--------------------------:  |
-|  TREC-6       | 5452      | 6          | 22.9%              | 0.733840               |
-0.770698                       |
-|  dbpedia-10k  | 10000     | 14         | 7.15%              | 0.850303               |
-0.886767                       |
-|  yelp-10k     | 10000     | 5          | 20.03%             | 0.414949               |
-0.434646                       |
+|  TREC-6       | 5452      | 6          | 22.9%              | 0.733840               |0.770698      |
+|  dbpedia-10k  | 10000     | 14         | 7.15%              | 0.850303               |0.886767      |
+|  yelp-10k     | 10000     | 5          | 20.03%             | 0.414949               |0.434646      |
 
 
 ## Implementation
@@ -76,3 +73,8 @@ python BERT\examples\main.py \
 --ft_both  \
 --output_dir {output_dir}
 ```
+
+## TODO
+1. use the pipeline to take care of other nlp models such as seq2seq, LSTM.
+2. make the pipeline compatible to CV models
+3. Automatically update the alpha of the student model.
