@@ -53,7 +53,7 @@ Now is only the pytorch version based on huggingface BERT Architecture.
 
 # Installation
 ```
-cd TeacherStudentModel/examples/BERT
+cd TeacherStudentModel/BERT
 
 sudo pip install .
 ```
@@ -61,7 +61,7 @@ sudo pip install .
 TeacherStudentModel
 
 ```
-python BERT\examples\main.py \
+python BERT\teacher_student_model\main.py \
 --task_name trec \
 --do_train --do_eval  --do_lower_case \
 --do_balance \
