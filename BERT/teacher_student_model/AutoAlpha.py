@@ -16,10 +16,13 @@ import requests
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
                               TensorDataset)
 from torch.utils.data.distributed import DistributedSampler
+from torch.autograd import Variable
+import torch.nn as nn
+from torch.nn import CrossEntropyLoss
 from tqdm import tqdm, trange
 
 from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
-from pytorch_pretrained_bert.modeling import BertConfig, WEIGHTS_NAME, CONFIG_NAME, BertForSequenceClassification
+from pytorch_pretrained_bert.modeling import BertConfig, WEIGHTS_NAME, CONFIG_NAME, BertForSequenceClassification, BertPreTrainedModel, BertModel
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 from pytorch_pretrained_bert.modeling_for_doc import BertForDocMultiClassification
@@ -36,6 +39,62 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message
                     datefmt='%m/%d/%Y %H:%M:%S',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+class StudentBertForSequenceClassification(BertPreTrainedModel):
+
+    def __init__(self, config, num_labels, w1, w2):
+        super(StudentBertForSequenceClassification, self).__init__(config)
+        self.num_labels = num_labels
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.classifier = nn.Linear(config.hidden_size, num_labels)
+        self.w1 = w1
+        self.w2 = w2
+        self.apply(self.init_bert_weights)
+        self.alpha = Variable(torch.tensor([0.5]).cuda(), requires_grad=True)
+    
+    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
+        res_dict = copy.deepcopy(self.state_dict())
+        for item in self.w1:
+            res_dict[item] = self.w1[item]*self.alpha + self.w2[item]*(1 - self.alpha)
+        self.load_state_dict(res_dict)
+        sequence_output, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
+        # sum_repre = torch.bmm(torch.unsqueeze(attention_mask, 1).float(), sequence_output).squeeze()
+        # pooled_output = torch.div(sum_repre.t(), torch.sum(attention_mask, -1).float()).t()
+        pooled_output = self.dropout(pooled_output)
+        logits = self.classifier(pooled_output)
+
+        if labels is not None:
+            loss_fct = CrossEntropyLoss()
+            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            return loss
+        else:
+            return logits
+
+def create_student_model(args, cache_dir, num_labels, device, TL_weights, TU_weights):
+    '''
+        create student model
+    '''
+    model_new = StudentBertForSequenceClassification.from_pretrained(args.bert_model,
+                                                    cache_dir = cache_dir,
+                                                    num_labels=num_labels,
+                                                    w1=TL_weights,
+                                                    w2=TU_weights)
+    if args.fp16:
+        model_new.half()
+    model_new.to(device)
+    if args.local_rank != -1:
+        try:
+            from apex.parallel import DistributedDataParallel as DDP
+        except ImportError:
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+        model_new = DDP(model_new)
+    elif torch.cuda.device_count() > 1:
+        model_new = torch.nn.DataParallel(model_new)
+    return model_new                  
+
+        
 
 def main():
     parser = argparse.ArgumentParser()
@@ -311,8 +370,10 @@ def main():
 
         # step 5: init student model with mix weights from TL and TU model
         logger.info("***** Init student model with weights from TL and TU model *****")
-        model_student = init_student_weights(model_TL, model_TU, model_student, args.alpha)
+        # model_student = init_student_weights(model_TL, model_TU, model_student, args.alpha)
+        model_student = create_student_model(args, cache_dir, num_labels, device, model_TL.state_dict(), model_TU.state_dict())
         model_student.to(device)
+        print(model_student.state_dict())
 
         # mix train data and pesudo data to create fine-tune dataset
         train_examples = processor.get_train_examples(args.data_dir)

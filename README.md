@@ -7,18 +7,18 @@ By Shaohan Huang, Tianyu Chen
 Teacher-Student model is a universe pipeline for semi-supervised training. It consists of the following steps:
 
 1. Take a surpervised architecture and make 2 copies of it. Let's call the 3 model Teacher-with-labeled-data(TL), Teacher-with-unlabeled-data(TU), Student-model(S)
-2. Train the TL model with labelled data,  then use the TL model to label the unlabeled data, make a set of pseudo data.
+2. Train the TL model with labelled data,  then use the TL model to label the unlabeled data to make a set of pseudo data.
 3. Choose a certain num of samples from pseudo data, then use the data to train the TU model.
 4. Initialize the student model with a mix of weights of TL and TU, then shuffle the labeled data and pseudo data to fine-tune the student model.
 5. The student model is the final model we get.
 
-Teacher-Student model works well with the **BERT** architecture, we improves the bert performance in classification tasks using the generated student model. 
+Teacher-Student model works well with the **BERT** architecture, we improve the bert performance in classification tasks using the generated student model. 
 
 |    Dataset    |  #Points  |  # Classes | % of largest class | Original Bert Accuracy | Teacher-Student Model Accuracy|
 |  :---------   | :------:  | :------:   | :------:           | :------:               | :--------------------------:  |
-|  TREC-6       | 5452      | 6          | 22.9%              | 0.733840               |0.770698      |
-|  dbpedia-10k  | 10000     | 14         | 7.15%              | 0.850303               |0.886767      |
-|  yelp-10k     | 10000     | 5          | 20.03%             | 0.414949               |0.434646      |
+|  TREC-6       | 5452      | 6          | 22.9%              | 0.733840               |0.770698(**+4%**)      |
+|  dbpedia-10k  | 10000     | 14         | 7.15%              | 0.850303               |0.886767(**+3%**)      |
+|  yelp-10k     | 10000     | 5          | 20.03%             | 0.414949               |0.434646(**+2%**)     |
 
 
 ## Implementation

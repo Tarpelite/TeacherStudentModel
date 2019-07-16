@@ -54,12 +54,12 @@ def load_train_data(args, input_ids, input_mask, segment_ids, label_ids):
     segment_ids = torch.tensor(segment_ids, dtype=torch.long)
     label_ids = torch.tensor(label_ids, dtype=torch.long)
     train_data = TensorDataset(input_ids, input_mask, segment_ids, label_ids)
-
-    train_sampler = SequentialSampler(train_data)
-    train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=args.eval_batch_size)
-
+    if args.local_rank == -1:
+        train_sampler = RandomSampler(train_data)
+    else:
+        train_sampler = DistributedSampler(train_data)
+    train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=args.train_batch_size)
     return train_dataloader
-
 
 def load_eval_data(args, input_ids, input_mask, segment_ids, label_ids):
     '''

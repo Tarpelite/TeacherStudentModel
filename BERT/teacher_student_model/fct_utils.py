@@ -156,19 +156,7 @@ def create_model(args, cache_dir, num_labels, device):
     model_new = BertForSequenceClassification.from_pretrained(args.bert_model,
                                                              cache_dir = cache_dir,
                                                              num_labels = num_labels)
-    if args.fp16:
-        model_new.half()
-    model_new.to(device)
-    if args.local_rank != -1:
-        try:
-            from apex.parallel import DistributedDataParallel as DDP
-        except ImportError:
-            raise ImportError(
-                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
-        model_new = DDP(model_new)
-    elif torch.cuda.device_count() > 1:
-        model_new = torch.nn.DataParallel(model_new)
-    return model_new
+    
 
 def predict_model(model, args, eval_dataloader, device):
     '''

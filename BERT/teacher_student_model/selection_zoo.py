@@ -52,30 +52,33 @@ class BalanceTopkSelectionFunction(object):
     '''
     @staticmethod
     def select(probas_val, topk):
-        logger.info(" topk = %d", topk)
         probas_val = np.array(probas_val)
-        logger.info(" probas_val shape %d %d", probas_val.shape[0], probas_val.shape[1])
         labels = np.argmax(probas_val, axis=1)
         logger.info("label distribution = %s", collections.Counter(labels))
         classes = len(probas_val[0])
         pos = 0
-        classes_unsort = [[] for x in range(classes)]
+        classes_unsort = [[]for x in range(classes)]
         permutation = []
-        
+
         for label in labels:
             row = [pos, probas_val[pos][label]]
             classes_unsort[label].append(row)
             pos += 1
-        
+        # check min_len >= k
+        # min_len = np.min([len(x) for x in classes_unsort])
+        # assert(min_len >= top_k)
         for i in range(classes):
             class_i = classes_unsort[i]
-            class_i.sort(key=lambda k: k[1], reverse=True)
+            class_i.sort(key = lambda k: k[1], reverse=True)
             class_len = len(class_i)
             if class_len < topk:
                 for row in class_i:
                     permutation.append(row[0])
             else:
-                for row in class_i:
+                for row in class_i[:topk]:
                     permutation.append(row[0])
+        
         permutation = np.array(permutation)
+        #print("permutation", permutation)
         return permutation
+                

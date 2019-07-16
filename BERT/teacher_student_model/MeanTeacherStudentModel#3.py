@@ -29,24 +29,26 @@ import numpy as np
 import torch
 import copy
 import requests
+import torch.nn as nn
+from torch.nn import CrossEntropyLoss
 
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
                               TensorDataset)
 from torch.utils.data.distributed import DistributedSampler
+from torch.autograd import Variable
 from tqdm import tqdm, trange
 
 from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
-from pytorch_pretrained_bert.modeling import BertConfig, WEIGHTS_NAME, CONFIG_NAME, BertForSequenceClassification
+from pytorch_pretrained_bert.modeling import BertConfig, WEIGHTS_NAME, CONFIG_NAME, BertForSequenceClassification, BertPreTrainedModel, BertModel
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 from pytorch_pretrained_bert.modeling_for_doc import BertForDocMultiClassification
 from oocl_utils.evaluate import evaluation_report
 from teacher_student_model.processor_zoo import OOCLAUSProcessor
-from teacher_student_model.fct_utils import train, init_optimizer, create_model, predict_model,
+from teacher_student_model.fct_utils import train
 from oocl_utils.score_output_2_labels import convert
 from sklearn.neighbors import KNeighborsClassifier
-from teacher_student_model.selection_zoo import RandomSelectionFunction, TopkSelectionFunction, BalanceTopkSelectionFunction
-from teacher_student_model.IO_utils import split, load_train_data, load_eval_data, convert_examples_to_features
+
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
@@ -57,6 +59,143 @@ logger = logging.getLogger(__name__)
 global_step = 0
 nb_tr_steps = 0
 tr_loss = 0
+
+class StudentBertForSequenceClassification(BertPreTrainedModel):
+
+    def __init__(self, config, num_labels, w1, w2):
+        super(StudentBertForSequenceClassification, self).__init__(config)
+        self.num_labels = num_labels
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.classifier = nn.Linear(config.hidden_size, num_labels)
+        self.w1 = w1
+        self.w2 = w2
+        self.apply(self.init_bert_weights)
+        self.alpha = Variable(torch.tensor([0.5]).cuda(), requires_grad=True)
+    
+    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
+        res_dict = copy.deepcopy(self.state_dict())
+        for item in self.w1:
+            res_dict[item] = self.w1[item] * self.alpha + self.w2[item] * (1 - self.alpha)
+        self.load_state_dict(res_dict)
+        sequence_output, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
+        # sum_repre = torch.bmm(torch.unsqueeze(attention_mask, 1).float(), sequence_output).squeeze()
+        # pooled_output = torch.div(sum_repre.t(), torch.sum(attention_mask, -1).float()).t()
+        pooled_output = self.dropout(pooled_output)
+        logits = self.classifier(pooled_output)
+
+        if labels is not None:
+            loss_fct = CrossEntropyLoss()
+            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            return loss
+        else:
+            return logits
+
+def create_student_model(args, cache_dir, num_labels, device, TL_weights, TU_weights):
+    '''
+        create student model
+    '''
+    model_new = StudentBertForSequenceClassification.from_pretrained(args.bert_model,
+                                                    cache_dir = cache_dir,
+                                                    num_labels=num_labels,
+                                                    w1=TL_weights,
+                                                    w2=TU_weights)
+    if args.fp16:
+        model_new.half()
+    model_new.to(device)
+    if args.local_rank != -1:
+        try:
+            from apex.parallel import DistributedDataParallel as DDP
+        except ImportError:
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+        model_new = DDP(model_new)
+    elif torch.cuda.device_count() > 1:
+        model_new = torch.nn.DataParallel(model_new)
+    return model_new
+
+def init_student_optimizer(model, args, data_loader):
+    num_train_optimization_steps = None
+    if args.do_train:
+        train_examples = data_loader.dataset
+        num_train_optimization_steps = int(
+            len(train_examples) / args.train_batch_size / args.gradient_accumulation_steps) * args.num_train_epochs
+        if args.local_rank != -1:
+            num_train_optimization_steps = num_train_optimization_steps // torch.distributed.get_world_size()
+
+    # Prepare optimizer
+    param_optimizer = list(model.named_parameters())
+    no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+    optimizer_grouped_parameters = [
+        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)] + [model.alpha], 'weight_decay': 0.01},
+        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+    ]
+
+    if args.fp16:
+        try:
+            from apex.optimizers import FP16_Optimizer
+            from apex.optimizers import FusedAdam
+        except ImportError:
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+
+        optimizer = FusedAdam(optimizer_grouped_parameters,
+                                lr=args.learning_rate,
+                                bias_correction=False,
+                                max_grad_norm=1.0)
+        if args.loss_scale == 0:
+            optimizer = FP16_Optimizer(optimizer, dynamic_loss_scale=True)
+        else:
+            optimizer = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
+
+    else:
+        optimizer = BertAdam(optimizer_grouped_parameters,
+                               lr=args.learning_rate,
+                               warmup=args.warmup_proportion,
+                               t_total=num_train_optimization_steps)
+    return optimizer, num_train_optimization_steps
+def train_student_model(model, args, n_gpu, train_dataloader, device, num_epoch, logger):
+    '''
+        train student model
+    '''
+    logger.info("""***** Initial optimizer *****""")
+    param_optimizer = list(model.named_parameters())
+    no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+    optimizer_grouped_parameters = [
+        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)] + [model.alpha], 'weight_decay': 0.01},
+        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+    ]
+
+    if args.fp16:
+        try:
+            from apex.optimizers import FP16_Optimizer
+            from apex.optimizers import FusedAdam
+        except ImportError:
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+
+        optimizer = FusedAdam(optimizer_grouped_parameters,
+                                lr=args.learning_rate,
+                                bias_correction=False,
+                                max_grad_norm=1.0)
+        if args.loss_scale == 0:
+            optimizer = FP16_Optimizer(optimizer, dynamic_loss_scale=True)
+        else:
+            optimizer = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
+
+    else:
+        optimizer = BertAdam(optimizer_grouped_parameters,
+                               lr=args.learning_rate,
+                               warmup=args.warmup_proportion,
+                               t_total=num_train_optimization_steps)
+    return optimizer, num_train_optimization_steps
+    
+
+
+
+def accuracy(out, labels):
+
+    return
 
 def vote_for_choice(acc_t, acc_s1, acc_s2):
     '''
@@ -278,6 +417,7 @@ def init_student_weights(model_TL, model_TU, model_student, alpha):
 
 
 class BaseSelectionFunction(object):
+
     def __init__(self):
         pass
 
@@ -406,6 +546,7 @@ class DBpediaProcessor(DataProcessor):
             examples.append(
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
+        
 class YelpProcessor(DataProcessor):
     """Processor for the CoLA data set (GLUE version)."""
 
@@ -418,7 +559,11 @@ class YelpProcessor(DataProcessor):
         """See base class."""
         return self._create_examples(
             self._read_tsv(os.path.join(data_dir, "dev.txt")), "dev")
-
+    
+    def get_test_examples(self,data_dir):
+        '''See base class.'''
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "test.txt")), "test")
     def get_labels(self):
         """See base class."""
         return ['1', '2', '3', '4', '5']
@@ -617,6 +762,7 @@ def cook_data(args, processor, label_list, tokenizer):
     return train_data_loader, eval_data_loader
 
 
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -729,10 +875,13 @@ def main():
                         help = "the weights of the TL model in the final model")
     parser.add_argument("--ft_true",
                         action="store_true",
-                        help="fine tune the student model with true data")
+                        help="fine-tune the student model with true data")
     parser.add_argument("--ft_pseudo",
                         action="store_true",
-                        help="fine tune the student model with pseudo data")
+                        help="fine-tune the student model with pseudo data")
+    parser.add_argument("--ft_both",
+                        action="store_true",
+                        help="fine-tune the student model with both true and pseudo data")       
     parser.add_argument('--server_ip', type=str, default='', help="Can be used for distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="Can be used for distant debugging.")
     args = parser.parse_args()
@@ -852,8 +1001,35 @@ def main():
 
         # step 5: init student model with mix weights from TL and TU model
         logger.info("***** Init student model with weights from TL and TU model *****")
-        model_student = init_student_weights(model_TL, model_TU, model_student, args.alpha)
+        #model_student = init_student_weights(model_TL, model_TU, model_student, args.alpha)
+        model_student = create_student_model(args, cache_dir, num_labels, device, model_TL.state_dict(), model_TU.state_dict())
         model_student.to(device)
+        #print(model_student.state_dict().keys())
+        print(list(model_student.named_parameters()))
+        print(model_student.alpha)
+        
+
+        # mix train data and pesudo data to create fine-tune dataset
+        train_examples = processor.get_train_examples(args.data_dir)
+        train_features = convert_examples_to_features(
+            train_examples, label_list, args.max_seq_length, tokenizer)
+        input_ids_train = np.array([f.input_ids for f in train_features])
+        input_mask_train = np.array([f.input_mask for f in train_features])
+        segment_ids_train = np.array([f.segment_ids for f in train_features])
+        label_ids_train = np.array([f.label_id for f in train_features])
+
+        input_ids_ft = np.concatenate((input_ids_train, np.array(input_ids_TU)), axis=0)
+        input_mask_ft = np.concatenate((input_mask_train, np.array(input_mask_TU)), axis=0)
+        segment_ids_ft = np.concatenate((segment_ids_train, np.array(segment_ids_TU)), axis=0)
+        label_ids_ft = np.concatenate((label_ids_train, np.array(label_ids_TU)), axis=0)
+
+        p = np.random.permutation(len(input_ids_ft))
+        input_ids_ft = input_ids_ft[p]
+        input_mask_ft = input_mask_ft[p]
+        segment_ids_ft = segment_ids_ft[p]
+        label_ids_ft = label_ids_ft[p]
+
+        fine_tune_dataloader = load_train_data(args, input_ids_ft, input_mask_ft, segment_ids_ft, label_ids_ft)
 
         if args.ft_true:
             # step 6: train student model with train data
@@ -867,11 +1043,19 @@ def main():
             model_student = train(model_student, args, n_gpu, train_data_loader_TU, device, args.num_student_train_epochs, logger)
             model_student.to(device)
         
+        if args.ft_both:
+            # step 8: train student model with both train and Peudo data
+            logger.info("***** Running train student model with both train and Pseudo data *****")
+            model_student = train(model_student, args, n_gpu, fine_tune_dataloader, device, args.num_student_train_epochs, logger)
+            model_student.to(device)
+            
+        
         logger.info("***** Evaluate student model  *****")
         model_student_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
     
 
         results = [model_TL_accuracy, model_TU_accuracy, model_student_accuracy]
+        print(model_student.alpha)
         print(results)
 
         if args.push_message:
