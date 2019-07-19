@@ -17,9 +17,12 @@ from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
                               TensorDataset)
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
+import torch.nn as nn
+from torch.nn import CrossEntropyLoss
+from torch.autograd import Variable
 
 from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
-from pytorch_pretrained_bert.modeling import BertConfig, WEIGHTS_NAME, CONFIG_NAME, BertForSequenceClassification
+from pytorch_pretrained_bert.modeling import BertConfig, WEIGHTS_NAME, CONFIG_NAME, BertForSequenceClassification, BertPreTrainedModel
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 from pytorch_pretrained_bert.modeling_for_doc import BertForDocMultiClassification
@@ -36,6 +39,22 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message
                     datefmt='%m/%d/%Y %H:%M:%S',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+class MutiTaskModel(BertPreTrainedModel):
+    def __init__(self, config, num_labels):
+        super(BertForSequenceClassification, self).__init__(config)
+        self.num_labels = num_labels
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.classifier1 = nn.Linear(config.hidden_size, num_labels)
+        self.classifier2 = nn.Linear(config.hidden_size, num_labels)
+        self.classifier3 = nn.Linear(config.hidden_size, num_labels)
+        self.apply(self.init_bert_weights)
+
+    def forward(self, input_ids, token_type_ids, attention_mask=None, labels=None):
+
+
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -228,9 +247,12 @@ def main():
 
     tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
 
-    logger.info("***** Build teacher(label) model *****")
+    logger.info("***** Build 3 models *****")
     # Prepare model
     cache_dir = args.cache_dir
+    
+    model1 = create_model(args, cache_dir, num_labels, device)
+
     model_TL  = create_model(args, cache_dir, num_labels, device)
 
     logger.info("***** Build teacher(unlabel) model *****")
@@ -238,9 +260,8 @@ def main():
     model_TU  = create_model(args, cache_dir, num_labels, device)
     logger.info("***** Build student model *****")
 
-    model_student = create_model(args, cache_dir, num_labels, device)
     
-    logger.info("***** Finish TL, TU and Student model building *****")
+    logger.info("***** Finish TL, TU model building *****")
 
 
     if args.do_train:
@@ -270,13 +291,11 @@ def main():
         eval_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
         eval_sampler = SequentialSampler(eval_data)
         eval_data_loader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
-        #print(len(all_input_ids))
+    
 
         
         # step 1: train the TL model with labeled data
         logger.info("***** Running train TL model with labeled data *****")
-        print(model_TL.state_dict())
-        print(model_TL.named_parameters())
         model_TL = train(model_TL, args, n_gpu, train_data_loader, device, args.num_train_epochs, logger)
         model_TL.to(device)
 
@@ -286,8 +305,7 @@ def main():
         # Step 2: predict the val_set
         logger.info("***** Product pseudo label from TL model *****")
         probas_val = predict_model(model_TL, args, eval_data_loader, device)
-        print(len(probas_val))
-    
+      
 
         # Step 3: choose top-k data_val and reset train_data
         if args.do_balance:
@@ -295,12 +313,9 @@ def main():
         else:
             selection = TopkSelectionFunction()
         permutation = selection.select(probas_val, args.top_k)
-        print("permutation", len(permutation))
         input_ids_TU, input_mask_TU, segment_ids_TU, label_ids_TU = sample_data(all_input_ids, all_input_mask, all_segment_ids, probas_val, permutation)
-        print("input_ids_TU size:", len(input_ids_TU))
         logger.info("Pseudo label distribution = %s", collections.Counter(label_ids_TU))
 
-        #print("labels_TU examples", label_ids_TU)
         # step 4: train TU model with Pseudo labels
         logger.info("***** Running train TU model with pseudo data *****")
         train_data_loader_TU = load_train_data(args, input_ids_TU, input_mask_TU, segment_ids_TU, label_ids_TU)
@@ -313,7 +328,7 @@ def main():
 
         # step 5: init student model with mix weights from TL and TU model
         logger.info("***** Init student model with weights from TL and TU model *****")
-        model_student = init_student_weights(model_TL, model_TU, model_student, args.alpha)
+        # model_student = create_student_model(args, cache_dir, num_labels, device, model_TL, model_TU)
         model_student.to(device)
 
         # mix train data and pesudo data to create fine-tune dataset
@@ -341,24 +356,24 @@ def main():
         if args.ft_true:
             # step 6: train student model with train data
             logger.info("***** Running train student model with train data *****")
-            model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
+            model_student, w1, w2 = train_student_model_with_attention(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger, model_TL, model_TU)
             model_student.to(device)
 
         if args.ft_pseudo:
             # step 7: train student model with Pseudo labels
             logger.info("***** Running train student model with Pseudo data *****")
-            model_student = train(model_student, args, n_gpu, train_data_loader_TU, device, args.num_student_train_epochs, logger)
+            model_student, w1, w2 = train_student_model_with_attention(model_student, args, n_gpu, train_data_loader_TU, device, args.num_student_train_epochs, logger, model_TL, model_TU)
             model_student.to(device)
         
         if args.ft_both:
             # step 8: train student model with both train and Peudo data
             logger.info("***** Running train student model with both train and Pseudo data *****")
-            model_student = train(model_student, args, n_gpu, fine_tune_dataloader, device, args.num_student_train_epochs, logger)
+            model_student,w1, w2 = train_student_model_with_attention(model_student, args, n_gpu, fine_tune_dataloader, device, args.num_student_train_epochs, logger, model_TL, model_TU)
             model_student.to(device)
             
         
         logger.info("***** Evaluate student model  *****")
-        model_student_accuracy = evaluate_model(model_student, device, eval_data_loader, logger)
+        model_student_accuracy = evaluate_student_model(model_TL, model_TU, w1, w2, device, eval_data_loader, logger)
     
 
         results = [model_TL_accuracy, model_TU_accuracy, model_student_accuracy]

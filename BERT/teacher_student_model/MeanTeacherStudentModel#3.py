@@ -128,7 +128,7 @@ def init_student_optimizer(model, args, data_loader):
     no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
     optimizer_grouped_parameters = [
         {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)] + [model.alpha], 'weight_decay': 0.01},
-        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0},
     ]
 
     if args.fp16:
@@ -154,42 +154,51 @@ def init_student_optimizer(model, args, data_loader):
                                warmup=args.warmup_proportion,
                                t_total=num_train_optimization_steps)
     return optimizer, num_train_optimization_steps
+
 def train_student_model(model, args, n_gpu, train_dataloader, device, num_epoch, logger):
     '''
         train student model
     '''
-    logger.info("""***** Initial optimizer *****""")
-    param_optimizer = list(model.named_parameters())
-    no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-    optimizer_grouped_parameters = [
-        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)] + [model.alpha], 'weight_decay': 0.01},
-        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
-    ]
+    logger.info("***** Initial optimizer *****")
+    optimizer, num_train_optimization_steps = init_student_optimizer(model, args, train_dataloader)
 
-    if args.fp16:
-        try:
-            from apex.optimizers import FP16_Optimizer
-            from apex.optimizers import FusedAdam
-        except ImportError:
-            raise ImportError(
-                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+    logger.info("***** Running train *****")
+    model.train()
+    global_step = 0
+    nb_tr_steps = 0
+    tr_loss = 0
+    for _ in trange(int(num_epoch), desc="Epoch"):
+        tr_loss = 0
+        nb_tr_examples, nb_tr_steps = 0, 0
+        for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
+            batch = tuple(t.to(device) for t in batch)
+            input_ids, input_mask, segment_ids, label_ids = batch
+            loss = model(input_ids, segment_ids, input_mask, label_ids)
+            if n_gpu > 1:
+                loss = loss.mean()  # mean() to average on multi-gpu.
+            if args.gradient_accumulation_steps > 1:
+                loss = loss / args.gradient_accumulation_steps
 
-        optimizer = FusedAdam(optimizer_grouped_parameters,
-                                lr=args.learning_rate,
-                                bias_correction=False,
-                                max_grad_norm=1.0)
-        if args.loss_scale == 0:
-            optimizer = FP16_Optimizer(optimizer, dynamic_loss_scale=True)
-        else:
-            optimizer = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
+            if args.fp16:
+                optimizer.backward(loss)
+            else:
+                loss.backward()
 
-    else:
-        optimizer = BertAdam(optimizer_grouped_parameters,
-                               lr=args.learning_rate,
-                               warmup=args.warmup_proportion,
-                               t_total=num_train_optimization_steps)
-    return optimizer, num_train_optimization_steps
-    
+            tr_loss += loss.item()
+            nb_tr_examples += input_ids.size(0)
+            nb_tr_steps += 1
+            if (step + 1) % args.gradient_accumulation_steps == 0:
+                if args.fp16:
+                    # modify learning rate with special warm up BERT uses
+                    # if args.fp16 is False, BertAdam is used that handles this automatically
+                    lr_this_step = args.learning_rate * warmup_linear(global_step / num_train_optimization_steps,
+                                                                      args.warmup_proportion)
+                    for param_group in optimizer.param_groups:
+                        param_group['lr'] = lr_this_step
+                optimizer.step()
+                optimizer.zero_grad()
+                global_step += 1
+    return model
 
 
 
@@ -1034,19 +1043,19 @@ def main():
         if args.ft_true:
             # step 6: train student model with train data
             logger.info("***** Running train student model with train data *****")
-            model_student = train(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
+            model_student = train_student_model(model_student, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger)
             model_student.to(device)
 
         if args.ft_pseudo:
             # step 7: train student model with Pseudo labels
             logger.info("***** Running train student model with Pseudo data *****")
-            model_student = train(model_student, args, n_gpu, train_data_loader_TU, device, args.num_student_train_epochs, logger)
+            model_student = train_student_model(model_student, args, n_gpu, train_data_loader_TU, device, args.num_student_train_epochs, logger)
             model_student.to(device)
         
         if args.ft_both:
             # step 8: train student model with both train and Peudo data
             logger.info("***** Running train student model with both train and Pseudo data *****")
-            model_student = train(model_student, args, n_gpu, fine_tune_dataloader, device, args.num_student_train_epochs, logger)
+            model_student = train_student_model(model_student, args, n_gpu, fine_tune_dataloader, device, args.num_student_train_epochs, logger)
             model_student.to(device)
             
         

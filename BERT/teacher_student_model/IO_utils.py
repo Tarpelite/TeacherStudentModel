@@ -28,7 +28,7 @@ def split(input_ids_all, input_mask_all, segment_ids_all, label_ids_all, train_s
     input_ids_train = np.array(input_ids_all)[permutation]
     input_ids_val = np.array(input_ids_all)
     input_mask_train = np.array(input_mask_all)[permutation]
-    input_mask_val = np.array(input_mask_val)
+    input_mask_val = np.array(input_mask_all)
     segment_ids_train = np.array(segment_ids_all)[permutation]
     segment_ids_val = np.array(segment_ids_all)
     label_ids_train = np.array(label_ids_all)[permutation]
