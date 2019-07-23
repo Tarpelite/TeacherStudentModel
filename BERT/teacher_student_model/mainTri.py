@@ -139,11 +139,16 @@ def create_tri_model(args, cache_dir, num_labels, device):
 
 def train_model(model, classifier2, classifier3, args, n_gpu, train_dataloader, device, num_epoch, logger, turn):
     
+    # init 3 different optimizer
     optimizer, num_train_optimization_steps = init_optimizer(model, args, train_dataloader)
-    optimizer2 = torch.optim.Adam(classifier2.parameters(), args.learning_rate)
-    optimizer3 = torch.optim.Adam(classifier3.parameters(), args.learning_rate)
+    classifier1 = model.classifier
+    model.classifier = classifier2
+    optimizer2, _ = init_optimizer(model, args, train_dataloader)
+    model.classifier = classifier3
+    optimizer3, _ = init_optimizer(model, args, train_dataloader)
+    model.classifier = classifier1
 
-    logger.info("***** Running train *****")
+    logger.info("***** Running train {} *****".format(turn))
     model.train()
     classifier2.train()
     classifier3.train()
@@ -200,7 +205,7 @@ def train_model(model, classifier2, classifier3, args, n_gpu, train_dataloader, 
             nb_tr_examples += input_ids.size(0)
             nb_tr_steps += 1
             if (step + 1) % args.gradient_accumulation_steps == 0:
-                print("loss", loss.item())
+                # print("loss", loss.item())
                 if args.fp16:
                     # modify learning rate with special warm up BERT uses
                     # if args.fp16 is False, BertAdam is used that handles this automatically
@@ -209,17 +214,24 @@ def train_model(model, classifier2, classifier3, args, n_gpu, train_dataloader, 
                     for param_group in optimizer.param_groups:
                         param_group['lr'] = lr_this_step
                 if turn == 1:
+                    model.classifier = classifier1
                     optimizer.step()
                     optimizer.zero_grad()
+                    classifier1 = model.classifier
                 elif turn == 2:
+                    model.classifier = classifier2
                     optimizer2.step()
                     optimizer2.zero_grad()
+                    classifier2 = model.classifier
                     # print("After training:",list(classifier2.parameters()))
                 elif turn == 3:
+                    model.classifier = classifier3
                     optimizer3.step()
                     optimizer3.zero_grad()
+                    classifier3 = model.classifier
                 global_step += 1
         print("loss", tr_loss)
+    model.classifier = classifier1
     return model, classifier2, classifier3
 
 
@@ -243,10 +255,10 @@ def TriTraining(model, classifier2, classifier3, args, device, n_gpu, epochs, pr
     eval_features = convert_examples_to_features(
         eval_examples, label_list, args.max_seq_length, tokenizer
     )
-    unlabeled_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)[:train_size]
-    unlabeled_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)[:train_size]
-    unlabeled_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)[:train_size]
-    unlabeled_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)[:train_size]
+    unlabeled_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
+    unlabeled_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
+    unlabeled_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
+    unlabeled_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
     eval_data = TensorDataset(unlabeled_input_ids, unlabeled_input_mask, unlabeled_segment_ids, unlabeled_label_ids)
     eval_sampler = SequentialSampler(eval_data)
     eval_data_loader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
@@ -284,6 +296,8 @@ def TriTraining(model, classifier2, classifier3, args, device, n_gpu, epochs, pr
             predict_results_k.extend(np.argmax(logits_k, axis=1))
 
         # choose  p2(x) == p3(x) 
+        # print("predict_result_j", predict_results_j)
+        # print("predict_result_k", predict_results_k)
         for i in range(len(predict_results_j)):
             if predict_results_j[i] == predict_results_k[i]:
                 trainset_index.append(i)
@@ -291,7 +305,7 @@ def TriTraining(model, classifier2, classifier3, args, device, n_gpu, epochs, pr
             
         # doing the permutation
         permutation = np.array(trainset_index)
-        print(permutation)
+        print("permutation size ", len(permutation))
         if len(permutation) == 0:
             train_data_loader = load_train_data(args, input_ids_train, input_mask_train, segment_ids_train, label_ids_train)
         else:
@@ -625,9 +639,10 @@ def main():
 
         classifier2 = nn.Linear(model.classifier.in_features, num_labels).cuda()
         classifier3 = nn.Linear(model.classifier.in_features, num_labels).cuda()
+
         # step 3: Tri-training
 
-        model, classifier2, classifier3 = TriTraining(model, classifier2, classifier3, args, device, n_gpu, 5, processor, label_list, tokenizer)
+        model, classifier2, classifier3 = TriTraining(model, classifier2, classifier3, args, device, n_gpu, 10, processor, label_list, tokenizer)
         
         # step 4: evalute model 
         acc = evaluate_model(model, classifier2, classifier3, device, eval_data_loader, logger)
