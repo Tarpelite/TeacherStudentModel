@@ -46,27 +46,119 @@ class MultiTaskTriModel(BertPreTrainedModel):
         self.num_labels = num_labels
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
+        self.classifier1 = nn.Linear(config.hidden_size, num_labels)
+        self.classifier2 = nn.Linear(config.hidden_size, num_labels)
+        self.classifier3 = nn.Linear(config.hidden_size, num_labels)
         self.apply(self.init_bert_weights)
 
-    def forward(self, input_ids, token_type_ids, attention_mask=None, labels=None, mode=0):
+    def forward(self, input_ids, token_type_ids, attention_mask=None, labels=None):
         sequence_output, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
         # sum_repre = torch.bmm(torch.unsqueeze(attention_mask, 1).float(), sequence_output).squeeze()
         # pooled_output = torch.div(sum_repre.t(), torch.sum(attention_mask, -1).float()).t()
         pooled_output = self.dropout(pooled_output)
-        logits = self.classifier(pooled_output)
-        
-        if mode == 0:
-            # norm mode: using the default classifier
-            if labels is not None:
-                loss_fct = CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-                return loss
-            else:
-                return logits
-        elif mode == 1:
-            # pooled mode: using the another classifer
-            return pooled_output
+        logits1 = self.classifier1(pooled_output)
+        logits2 = self.classifier2(pooled_output)
+        logits3 = self.classifier3(pooled_output)
+
+        l1_para = list(self.classifier1.parameters())
+        l2_para = list(self.classifier2.parameters())
+
+        l1_para_book = [x.data.detach().cpu().numpy() for x in l1_para]
+        l2_para_book = [x.data.detach().cpu().numpy() for x in l2_para]
+        l1_para_book = np.append(l1_para_book[0], l1_para_book[1])
+        l2_para_book = np.append(l2_para_book[0], l2_para_book[1])
+        # print("l1_para_book", l1_para_book)
+        wm1 = torch.autograd.Variable(torch.Tensor(l1_para_book).cuda(), requires_grad=True)
+        wm2 = torch.autograd.Variable(torch.Tensor(l2_para_book).cuda(), requires_grad=True)
+
+        orth_loss = torch.norm(wm1 * wm2)
+        loss_fct = CrossEntropyLoss()
+
+        if labels is not None:
+            loss1 = loss_fct(logits1.view(-1, self.num_labels), labels.view(-1))
+            loss2 = loss_fct(logits2.view(-1, self.num_labels), labels.view(-1))
+            loss3 = loss_fct(logits3.view(-1, self.num_labels), labels.view(-1))
+            return loss1, loss2, loss3, orth_loss
+        else:
+            return logits1, logits2, logits3
+
+def init_tri_model_optimizer(model, args, data_loader):
+    num_train_optimization_steps = None
+    if args.do_train:
+        train_examples = data_loader.dataset
+        num_train_optimization_steps = int(
+            len(train_examples) / args.train_batch_size / args.gradient_accumulation_steps) * args.num_train_epochs
+        if args.local_rank != -1:
+            num_train_optimization_steps = num_train_optimization_steps // torch.distributed.get_world_size()
+    
+    param_optimizer = list(model.named_parameters())
+    no_decay1 = ['bias', 'LayerNorm.bias', 'LayerNorm.weight',
+                'classifier2.bias', 'classifier2.weight',
+                'classifier3.bias', 'classifier3.weight']
+    no_decay2 = ['bias', 'LayerNorm.bias', 'LayerNorm.weight',
+                'classifier1.bias', 'classifier1.weight',
+                'classifier3.bias', 'classifier3.weight']
+    no_decay3 = ['bias', 'LayerNorm.bias', 'LayerNorm.weight',
+                'classifier1.bias', 'classifier1.weight',
+                'classifier2.bias', 'classifier2.weight']
+    optimizer_grouped_parameters1 = [
+        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay1)], 'weight_decay': 0.01},
+        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay1)], 'weight_decay': 0.0}
+    ]
+    optimizer_grouped_parameters2 = [
+        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay2)], 'weight_decay': 0.01},
+        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay2)], 'weight_decay': 0.0}
+    ]
+    optimizer_grouped_parameters3 = [
+        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay3)], 'weight_decay': 0.01},
+        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay3)], 'weight_decay': 0.0}
+    ]
+
+    if args.fp16:
+        try:
+            from apex.optimizers import FP16_Optimizer
+            from apex.optimizers import FusedAdam
+        except ImportError:
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+
+        optimizer1 = FusedAdam(optimizer_grouped_parameters1,
+                                lr=args.learning_rate,
+                                bias_correction=False,
+                                max_grad_norm=1.0)
+        optimizer2 = FusedAdam(optimizer_grouped_parameters2,
+                                lr=args.learning_rate,
+                                bias_correction=False,
+                                max_grad_norm=1.0)
+        optimizer3 = FusedAdam(optimizer_grouped_parameters3,
+                                lr=args.learning_rate,
+                                bias_correction=False,
+                                max_grad_norm=1.0)
+        if args.loss_scale == 0:
+            optimizer1 = FP16_Optimizer(optimizer1, dynamic_loss_scale=True)
+            optimizer2 = FP16_Optimizer(optimizer2, dynamic_loss_scale=True)
+            optimizer3 = FP16_Optimizer(optimizer3, dynamic_loss_scale=True)
+        else:
+            optimizer1 = FP16_Optimizer(optimizer1, static_loss_scale=args.loss_scale)
+            optimizer2 = FP16_Optimizer(optimizer2, static_loss_scale=args.loss_scale)
+            optimizer3 = FP16_Optimizer(optimizer3, static_loss_scale=args.loss_scale)
+    else:
+        optimizer1 = BertAdam(optimizer_grouped_parameters1,
+                               lr=args.learning_rate,
+                               warmup=args.warmup_proportion,
+                               t_total=num_train_optimization_steps)
+        optimizer2 = BertAdam(optimizer_grouped_parameters2,
+                            lr=args.learning_rate,
+                            warmup=args.warmup_proportion,
+                            t_total=num_train_optimization_steps)
+        optimizer3 = BertAdam(optimizer_grouped_parameters3,
+                            lr=args.learning_rate,
+                            warmup=args.warmup_proportion,
+                            t_total=num_train_optimization_steps)
+    return optimizer1, optimizer2, optimizer3, num_train_optimization_steps
+    
+
+
 
 
 def init_tri_model(model, args, n_gpu, train_dataloader, device, num_epoch, logger):
@@ -75,21 +167,25 @@ def init_tri_model(model, args, n_gpu, train_dataloader, device, num_epoch, logg
     '''
     logger.info("***** Initial optimizer *****")
     optimizer, num_train_optimization_steps = init_optimizer(model, args, train_dataloader)
+    # optimizer1, optimizer2, optimizer3, num_train_optimization_steps = init_tri_model_optimizer(model, args, train_dataloader)
 
     logger.info("***** Running train *****")
     model.train()
     global_step = 0
     nb_tr_steps = 0
     tr_loss = 0
+    gamma = 0.01
     for _ in trange(int(num_epoch), desc="Epoch"):
         tr_loss = 0
         nb_tr_examples, nb_tr_steps = 0, 0
         for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
             batch = tuple(t.to(device) for t in batch)
             input_ids, input_mask, segment_ids, label_ids = batch
-            loss = model(input_ids, segment_ids, input_mask, label_ids, mode=0)
+            loss1, loss2, loss3, orth_loss = model(input_ids, segment_ids, input_mask, label_ids)
+            loss = loss1 + loss2 + loss3 + gamma*orth_loss
             if n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu.
+
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
 
@@ -97,7 +193,6 @@ def init_tri_model(model, args, n_gpu, train_dataloader, device, num_epoch, logg
                 optimizer.backward(loss)
             else:
                 loss.backward()
-
             tr_loss += loss.item()
             nb_tr_examples += input_ids.size(0)
             nb_tr_steps += 1
@@ -109,9 +204,11 @@ def init_tri_model(model, args, n_gpu, train_dataloader, device, num_epoch, logg
                                                                       args.warmup_proportion)
                     for param_group in optimizer.param_groups:
                         param_group['lr'] = lr_this_step
+
                 optimizer.step()
                 optimizer.zero_grad()
                 global_step += 1
+        print("loss", loss.item())
     return model
 
 
@@ -137,21 +234,13 @@ def create_tri_model(args, cache_dir, num_labels, device):
          model_new = torch.nn.DataParallel(model_new)
     return model_new
 
-def train_model(model, classifier2, classifier3, args, n_gpu, train_dataloader, device, num_epoch, logger, turn):
+def train_model(model, args, n_gpu, train_dataloader, device, num_epoch, logger, turn):
     
     # init 3 different optimizer
-    optimizer, num_train_optimization_steps = init_optimizer(model, args, train_dataloader)
-    classifier1 = model.classifier
-    model.classifier = classifier2
-    optimizer2, _ = init_optimizer(model, args, train_dataloader)
-    model.classifier = classifier3
-    optimizer3, _ = init_optimizer(model, args, train_dataloader)
-    model.classifier = classifier1
+    optimizer1, optimizer2, optimizer3, num_train_optimization_steps = init_tri_model_optimizer(model, args, train_dataloader)
 
     logger.info("***** Running train {} *****".format(turn))
     model.train()
-    classifier2.train()
-    classifier3.train()
     global_step = 0
     nb_tr_steps = 0
     tr_loss = 0
@@ -164,44 +253,41 @@ def train_model(model, classifier2, classifier3, args, n_gpu, train_dataloader, 
         for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
             batch = tuple(t.to(device) for t in batch)
             input_ids, input_mask, segment_ids, label_ids = batch
-            pooled_output = model(input_ids, segment_ids, input_mask, label_ids, mode=1)
-            logits1 = model.classifier(pooled_output)
-            logits2 = classifier2(pooled_output)
-            logits3 = classifier3(pooled_output)
-
-            l2_para = list(classifier2.parameters())
-            l3_para = list(classifier3.parameters())
+            loss1, loss2, loss3, orth_loss= model(input_ids, segment_ids, input_mask, label_ids)
             
-            l2_para_book = [x.detach().cpu().numpy() for x in l2_para]
-            l3_para_book = [x.detach().cpu().numpy() for x in l3_para]
-            l2_para_book = np.append(l2_para_book[0], l2_para_book[1])
-            l3_para_book = np.append(l3_para_book[0], l3_para_book[1])
-
-            wm2 = torch.autograd.Variable(torch.Tensor(l2_para_book).cuda(), requires_grad=True)
-            wm3 = torch.autograd.Variable(torch.Tensor(l3_para_book).cuda(), requires_grad=True)
-
-            orth_loss = torch.norm(wm2 * wm3)
-            loss_fct = CrossEntropyLoss()
-            loss1 = loss_fct(logits1.view(-1, model.num_labels), label_ids.view(-1))
-            loss2 = loss_fct(logits2.view(-1, model.num_labels), label_ids.view(-1))
-            loss3 = loss_fct(logits3.view(-1, model.num_labels), label_ids.view(-1))
-
-            loss = loss1 + loss2 + loss3 +gamma*orth_loss
             if n_gpu > 1:
-                loss = loss.mean()  # mean() to average on multi-gpu.
+                loss1 = loss1.mean()  # mean() to average on multi-gpu.
+                loss2 = loss2.mean()
+                loss3 = loss3.mean()
+                orth_loss = orth_loss.mean()
+
             if args.gradient_accumulation_steps > 1:
-                loss = loss / args.gradient_accumulation_steps
+                loss1 = loss1 / args.gradient_accumulation_steps
+                loss2 = loss2 / args.gradient_accumulation_steps
+                loss3 = loss3 / args.gradient_accumulation_steps
+                orth_loss  = orth_loss / args.gradient_accumulation_steps
 
             if args.fp16:
                 if turn == 1:
-                    optimizer.backward(loss)
+                    loss = loss1 + gamma * orth_loss 
+                    optimizer1.backward(loss)
                 elif turn == 2:
+                    loss = loss2 + gamma * orth_loss
                     optimizer2.backward(loss)
-                elif  turn == 3:
+                elif turn == 3:
+                    loss = loss3 + gamma * orth_loss
                     optimizer3.backward(loss)
             else:
+                if turn == 1:
+                    loss = loss1 + gamma * orth_loss 
+                elif turn == 2:
+                    loss = loss2 + gamma * orth_loss
+                elif turn == 3:
+                    loss = loss3 + gamma * orth_loss
                 loss.backward()
+            
             tr_loss += loss.item()
+        
             nb_tr_examples += input_ids.size(0)
             nb_tr_steps += 1
             if (step + 1) % args.gradient_accumulation_steps == 0:
@@ -211,31 +297,28 @@ def train_model(model, classifier2, classifier3, args, n_gpu, train_dataloader, 
                     # if args.fp16 is False, BertAdam is used that handles this automatically
                     lr_this_step = args.learning_rate * warmup_linear(global_step / num_train_optimization_steps,
                                                                     args.warmup_proportion)
-                    for param_group in optimizer.param_groups:
+                    for param_group in optimizer1.param_groups:
+                        param_group['lr'] = lr_this_step
+                    for param_group in optimizer2.param_groups:
+                        param_group['lr'] = lr_this_step
+                    for param_group in optimizer3.param_groups:
                         param_group['lr'] = lr_this_step
                 if turn == 1:
-                    model.classifier = classifier1
-                    optimizer.step()
-                    optimizer.zero_grad()
-                    classifier1 = model.classifier
+                    optimizer1.step()
+                    optimizer1.zero_grad()
                 elif turn == 2:
-                    model.classifier = classifier2
                     optimizer2.step()
                     optimizer2.zero_grad()
-                    classifier2 = model.classifier
                     # print("After training:",list(classifier2.parameters()))
                 elif turn == 3:
-                    model.classifier = classifier3
                     optimizer3.step()
                     optimizer3.zero_grad()
-                    classifier3 = model.classifier
                 global_step += 1
         print("loss", tr_loss)
-    model.classifier = classifier1
-    return model, classifier2, classifier3
+    return model
 
 
-def TriTraining(model, classifier2, classifier3, args, device, n_gpu, epochs, processor, label_list, tokenizer):
+def TriTraining(model, args, device, n_gpu, epochs, processor, label_list, tokenizer):
     '''
         Tri-Trainint Process
     '''
@@ -265,11 +348,9 @@ def TriTraining(model, classifier2, classifier3, args, device, n_gpu, epochs, pr
 
     logger.info("***** Tri Training *****")
     cnt = 0
-    for cnt in trange(2, 3 * epochs + 1, desc="Turn"):
+    for cnt in range(1, 3 * epochs + 1):
         trainset_index = []
         model.eval()
-        classifier2.eval()
-        classifier3.eval()
         predict_results_j = []
         predict_results_k = []
 
@@ -280,16 +361,16 @@ def TriTraining(model, classifier2, classifier3, args, device, n_gpu, epochs, pr
             label_ids = label_ids.to(device)
 
             with torch.no_grad():
-                pooled_output = model(input_ids, segment_ids, input_mask, mode=1)
+                logits1, logits2, logits3 = model(input_ids, segment_ids, input_mask)
                 if cnt % 3 == 1:
-                    logits_j = classifier2(pooled_output)
-                    logits_k = classifier3(pooled_output)
+                    logits_j = logits2
+                    logits_k = logits3
                 elif cnt % 3 == 2:
-                    logits_j = model.classifier(pooled_output)
-                    logits_k = classifier3(pooled_output)
+                    logits_j = logits1
+                    logits_k = logits3
                 elif cnt % 3 == 0:
-                    logits_j = model.classifier(pooled_output)
-                    logits_k = classifier2(pooled_output)
+                    logits_j = logits1
+                    logits_k = logits2
             logits_j = logits_j.detach().cpu().numpy()
             logits_k = logits_k.detach().cpu().numpy()
             predict_results_j.extend(np.argmax(logits_j, axis=1))
@@ -309,12 +390,13 @@ def TriTraining(model, classifier2, classifier3, args, device, n_gpu, epochs, pr
         if len(permutation) == 0:
             train_data_loader = load_train_data(args, input_ids_train, input_mask_train, segment_ids_train, label_ids_train)
         else:
-            if cnt % 3 == 1:
+            if cnt % 3 == 0:
                 input_ids_train_new = unlabeled_input_ids[permutation]
                 input_mask_train_new = unlabeled_input_mask[permutation]
                 segment_ids_train_new = unlabeled_segment_ids[permutation]
                 label_ids_train_new = np.array(predict_results_j)[permutation]
                 train_data_loader = load_train_data(args, input_ids_train_new, input_mask_train_new, segment_ids_train_new, label_ids_train_new)
+                model = train_model(model, args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger, 3)
             else:
                 # print("input_ids_train shape:", input_ids_train.shape)
                 # print("unlabeled_input_ids shape", unlabeled_input_ids[permutation].shape)
@@ -323,12 +405,9 @@ def TriTraining(model, classifier2, classifier3, args, device, n_gpu, epochs, pr
                 segment_ids_train_new = np.concatenate((segment_ids_train, unlabeled_segment_ids[permutation]), axis=0)
                 label_ids_train_new = np.concatenate((label_ids_train, np.array(predict_results_j)[permutation]), axis=0)
                 train_data_loader = load_train_data(args, input_ids_train_new, input_mask_train_new, segment_ids_train_new, label_ids_train_new)
-        if cnt % 3 == 0:
-            model, classifier2, classifier3 = train_model(model, classifier2, classifier3, args, n_gpu, train_data_loader, device, args.num_train_epochs, logger, 3)
-        else:
-            model, classifier2, classifier3 = train_model(model, classifier2, classifier3, args, n_gpu, train_data_loader, device, args.num_train_epochs, logger, cnt % 3)
+                model = train_model(model,args, n_gpu, train_data_loader, device, args.num_student_train_epochs, logger, cnt % 3)
 
-    return model, classifier2, classifier3
+    return model
 
 
 def majority_vote(a, b, c):
@@ -351,10 +430,8 @@ def majority_vote(a, b, c):
     return np.array(res)
     
 
-def evaluate_model(model, classifier2, classifier3, device, eval_data_loader, logger):
+def evaluate_model(model, device, eval_data_loader, logger):
     model.eval()
-    classifier2.eval()
-    classifier3.eval()
     
     eval_loss, eval_accuracy = 0, 0
     nb_eval_steps, nb_eval_examples =0, 0
@@ -368,10 +445,7 @@ def evaluate_model(model, classifier2, classifier3, device, eval_data_loader, lo
         label_ids = label_ids.to(device)
 
         with torch.no_grad():
-            pooled_output = model(input_ids, segment_ids, input_mask, mode=1)
-            logits1 = model.classifier(pooled_output)
-            logits2 = classifier2(pooled_output)
-            logits3 = classifier3(pooled_output)
+            logits1, logits2, logits3 = model(input_ids, segment_ids, input_mask)
         
         logits1 = logits1.detach().cpu().numpy()
         logits2 = logits2.detach().cpu().numpy()
@@ -632,20 +706,17 @@ def main():
         # step 1: train the Tri model with labeled data
         logger.info("***** Running train TL model with labeled data *****")
         model = init_tri_model(model, args, n_gpu, train_data_loader, device, args.num_train_epochs, logger)
+        acc1 = evaluate_model(model, device, eval_data_loader, logger)
 
-        # step 2: copy 2 classifiers from the Tri model, the default classifier is in the bert
-        # classifier2 = copy.deepcopy(model.classifier)
-        # classifier3 = copy.deepcopy(model.classifier)
-
-        classifier2 = nn.Linear(model.classifier.in_features, num_labels).cuda()
-        classifier3 = nn.Linear(model.classifier.in_features, num_labels).cuda()
 
         # step 3: Tri-training
 
-        model, classifier2, classifier3 = TriTraining(model, classifier2, classifier3, args, device, n_gpu, 10, processor, label_list, tokenizer)
+        model = TriTraining(model, args, device, n_gpu, 2, processor, label_list, tokenizer)
         
         # step 4: evalute model 
-        acc = evaluate_model(model, classifier2, classifier3, device, eval_data_loader, logger)
+        acc = evaluate_model(model, device, eval_data_loader, logger)
+
+        print(acc1, acc)
         
 if __name__ == "__main__":
     main()
