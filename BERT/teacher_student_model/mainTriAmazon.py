@@ -27,7 +27,7 @@ from pytorch_pretrained_bert.tokenization import BertTokenizer
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 from pytorch_pretrained_bert.modeling_for_doc import BertForDocMultiClassification
 from oocl_utils.evaluate import evaluation_report
-from teacher_student_model.processor_zoo import OOCLAUSProcessor, DBpediaProcessor, TrecProcessor, YelpProcessor
+from teacher_student_model.processor_zoo import OOCLAUSProcessor, DBpediaProcessor, TrecProcessor, YelpProcessor,AmazonProcessor
 from teacher_student_model.fct_utils import train, init_optimizer, create_model, predict_model, init_student_weights
 from oocl_utils.score_output_2_labels import convert
 from sklearn.neighbors import KNeighborsClassifier
@@ -322,7 +322,7 @@ def TriTraining(model, args, device, n_gpu, epochs, processor, label_list, token
     '''
         Tri-Trainint Process
     '''
-    train_size = 300
+    train_size = 10000
      # initial the train set L
     train_examples = processor.get_train_examples(args.data_dir)
     train_features = convert_examples_to_features(train_examples, label_list, args.max_seq_length, tokenizer)
@@ -334,10 +334,11 @@ def TriTraining(model, args, device, n_gpu, epochs, processor, label_list, token
     train_data_loader = load_train_data(args, input_ids_train, input_mask_train, segment_ids_train, label_ids_train)
 
     # initial the unlabeled set U
-    eval_examples = processor.get_dev_examples(args.data_dir)
+    eval_examples = processor.get_unlabeled_examples(args.data_dir)
     eval_features = convert_examples_to_features(
         eval_examples, label_list, args.max_seq_length, tokenizer
     )
+    logger.info(" Num Unlabeled Examples = %d", len(eval_examples))
     if train_size > len(eval_features):
         train_size = len(eval_features)
     unlabeled_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)[:train_size]
@@ -615,6 +616,7 @@ def main():
         "dbpedia": DBpediaProcessor,
         "trec": TrecProcessor,
         "yelp": YelpProcessor,
+        "amazon":AmazonProcessor,
     }
 
     num_labels_task = {
@@ -622,6 +624,8 @@ def main():
         "dbpedia": len(DBpediaProcessor().get_labels()),
         "trec": len(TrecProcessor().get_labels()),
         "yelp": len(YelpProcessor().get_labels()),
+        "amazon": len(AmazonProcessor().get_labels()),
+        
     }
 
     if args.local_rank == -1 or args.no_cuda:
@@ -677,7 +681,7 @@ def main():
 
     if args.do_train:
         # step 0: load train examples
-        logger.info("Cook training and dev data for teacher model")
+        logger.info("Cook data")
         train_examples = processor.get_train_examples(args.data_dir)
         train_features = convert_examples_to_features(train_examples, label_list, args.max_seq_length, tokenizer)
         logger.info(" Num Training Examples = %d", len(train_examples))
@@ -713,7 +717,7 @@ def main():
 
         # step 3: Tri-training
 
-        model = TriTraining(model, args, device, n_gpu, 3, processor, label_list, tokenizer)
+        model = TriTraining(model, args, device, n_gpu, 1, processor, label_list, tokenizer)
         
         # step 4: evalute model 
         acc = evaluate_model(model, device, eval_data_loader, logger)

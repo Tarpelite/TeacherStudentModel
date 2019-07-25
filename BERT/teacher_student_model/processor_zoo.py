@@ -106,33 +106,6 @@ class InputExample(object):
         self.text_b = text_b
         self.label = label
 
-        
-class DataProcessor(object):
-    """Base class for data converters for sequence classification data sets."""
-
-    def get_train_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for the train set."""
-        raise NotImplementedError()
-
-    def get_dev_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for the dev set."""
-        raise NotImplementedError()
-
-    def get_labels(self):
-        """Gets the list of labels for this data set."""
-        raise NotImplementedError()
-
-    @classmethod
-    def _read_tsv(cls, input_file, quotechar=None):
-        """Reads a tab separated value file."""
-        with open(input_file, "r", encoding='utf-8') as f:
-            reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
-            lines = []
-            for line in reader:
-                lines.append(line)
-            return lines
-
-
 class TrecProcessor(DataProcessor):
     """Processor for the CoLA data set (GLUE version)."""
 
@@ -160,6 +133,7 @@ class TrecProcessor(DataProcessor):
             examples.append(
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
+
 
 
 class DBpediaProcessor(DataProcessor):
@@ -218,3 +192,45 @@ class YelpProcessor(DataProcessor):
             examples.append(
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
+
+class AmazonProcessor(DataProcessor):
+    """Prcoessor for the Amazon Review data set"""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "train_labeled.csv")), "train")
+    
+    def get_unlabeled_examples(self, data_dir):
+        """See base class"""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "train_unlabeled.csv")), "unlabeled")
+        
+    
+    def get_dev_examples(self, data_dir):
+        """See base class"""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "test.csv")), "dev")
+    
+    def get_labels(self):
+        """See base class."""
+        return ['0', '1']
+    
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        examples = []
+        for (i, line) in enumerate(lines):
+            guid = "%s-%s" % (set_type, i)
+            text_a = line[1] + line[2]
+            label = line[0]
+            examples.append(
+                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+        return examples
+    
+    def _read_tsv(self, input_file):
+         with open(input_file, 'r', newline='') as f:
+            reader = csv.reader(f)
+            lines = []
+            for line in reader:
+                lines.append(line)
+            return lines
