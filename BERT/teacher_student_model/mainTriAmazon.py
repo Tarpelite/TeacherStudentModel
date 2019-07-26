@@ -28,7 +28,7 @@ from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 from pytorch_pretrained_bert.modeling_for_doc import BertForDocMultiClassification
 from oocl_utils.evaluate import evaluation_report
 from teacher_student_model.processor_zoo import OOCLAUSProcessor, DBpediaProcessor, TrecProcessor, YelpProcessor,AmazonProcessor
-from teacher_student_model.fct_utils import train, init_optimizer, create_model, predict_model, init_student_weights
+from teacher_student_model.fct_utils import train, init_optimizer, create_model, predict_model, init_student_weights, evaluate_model
 from oocl_utils.score_output_2_labels import convert
 from sklearn.neighbors import KNeighborsClassifier
 from teacher_student_model.selection_zoo import RandomSelectionFunction, TopkSelectionFunction, BalanceTopkSelectionFunction
@@ -433,7 +433,7 @@ def majority_vote(a, b, c):
     return np.array(res)
     
 
-def evaluate_model(model, device, eval_data_loader, logger):
+def evaluate_tri_model(model, device, eval_data_loader, logger):
     model.eval()
     
     eval_loss, eval_accuracy = 0, 0
@@ -600,6 +600,9 @@ def main():
     parser.add_argument("--ft_both",
                         action="store_true",
                         help="fine-tune the student model with both true and pseudo data")
+    parser.add_argument("--do_origin",
+                        action="store_true",
+                        help = "train the origin Bert")
     parser.add_argument('--server_ip', type=str, default='', help="Can be used for distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="Can be used for distant debugging.")
     args = parser.parse_args()
@@ -675,11 +678,48 @@ def main():
     # Prepare model
     cache_dir = args.cache_dir
     
-    model = create_tri_model(args, cache_dir, num_labels, device)
+    # model = create_tri_model(args, cache_dir, num_labels, device)
 
+    if args.do_origin:
+        logger.info ("Build origin Bert")
+        model = create_model(args, cache_dir, num_labels, device)
+        train_examples = processor.get_train_examples(args.data_dir)
+        train_features = convert_examples_to_features(train_examples, label_list, args.max_seq_length, tokenizer)
+        logger.info(" Num Training Examples = %d", len(train_examples))
+        logger.info(" Train Batch Size = %d", args.train_batch_size)
 
+        input_ids_train = np.array([f.input_ids for f in train_features])
+        input_mask_train = np.array([f.input_mask for f in train_features])
+        segment_ids_train = np.array([f.segment_ids for f in train_features])
+        label_ids_train = np.array([f.label_id for f in train_features])
+        train_data_loader = load_train_data(args, input_ids_train, input_mask_train, segment_ids_train, label_ids_train)
+        
+        eval_examples = processor.get_dev_examples(args.data_dir)
+        eval_features = convert_examples_to_features(
+            eval_examples, label_list, args.max_seq_length, tokenizer
+        )
+        logger.info(" Num Eval Examples = %d", len(eval_examples))
+        logger.info(" Eval Batch Size = %d", args.eval_batch_size)
+        all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
+        all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
+        all_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
+        all_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
+        eval_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
+        eval_sampler = SequentialSampler(eval_data)
+        eval_data_loader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
 
-    if args.do_train:
+        # step 1: train origin Bert with labeled data
+        logger.info("Train origin Bert with labeled data")
+        model = train(model, args, n_gpu, train_data_loader, device, args.num_train_epochs, logger)
+        acc = evaluate_model(model, device, eval_data_loader, logger)
+
+        print("origin acc", acc)
+
+    elif args.do_train:
+        logger.info("***** Build tri model *****")
+        # Prepare model
+        
+        model = create_tri_model(args, cache_dir, num_labels, device)
         # step 0: load train examples
         logger.info("Cook data")
         train_examples = processor.get_train_examples(args.data_dir)
@@ -712,7 +752,7 @@ def main():
         # step 1: train the Tri model with labeled data
         logger.info("***** Running train TL model with labeled data *****")
         model = init_tri_model(model, args, n_gpu, train_data_loader, device, args.num_train_epochs, logger)
-        acc1 = evaluate_model(model, device, eval_data_loader, logger)
+        acc1 = evaluate_tri_model(model, device, eval_data_loader, logger)
 
 
         # step 3: Tri-training
@@ -720,9 +760,11 @@ def main():
         model = TriTraining(model, args, device, n_gpu, 3, processor, label_list, tokenizer)
         
         # step 4: evalute model 
-        acc = evaluate_model(model, device, eval_data_loader, logger)
+        acc = evaluate_tri_model(model, device, eval_data_loader, logger)
 
         print(acc1, acc)
+
+
         
 if __name__ == "__main__":
     main()
