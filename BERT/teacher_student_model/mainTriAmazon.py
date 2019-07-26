@@ -717,7 +717,7 @@ def main():
 
         # step 3: Tri-training
 
-        model = TriTraining(model, args, device, n_gpu, 2, processor, label_list, tokenizer)
+        model = TriTraining(model, args, device, n_gpu, 3, processor, label_list, tokenizer)
         
         # step 4: evalute model 
         acc = evaluate_model(model, device, eval_data_loader, logger)
